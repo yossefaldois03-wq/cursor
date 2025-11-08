@@ -1,0 +1,3867 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام المحاسبة والمخزون المتكامل - إصدار محاسبي صحيح</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- SheetJS CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        * {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #c5c5c5;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 5px 0;
+        }
+        
+        .container-main {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 5px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            margin: 5px 0;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+        }
+        
+        .upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 5px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9ff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+        }
+        
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f0f2ff;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+        }
+        
+        .upload-area.dragover {
+            border-color: #764ba2;
+            background: #e8ebff;
+            transform: scale(1.02);
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+        
+        .tab-button {
+            padding: 4px 8px;
+            border: none;
+            background: #e5e7eb;
+            color: #374151;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border-radius: 2px 2px 0 0;
+            margin: 0 1px 0 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tab-button:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: 0.5s;
+        }
+        
+        .tab-button:hover:before {
+            left: 100%;
+        }
+        
+        .tab-button.active {
+            background: white;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .tab-button:hover:not(.active) {
+            background: #d1d5db;
+            transform: translateY(-2px);
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 3px;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        
+        thead {
+            position: sticky;
+            top: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            z-index: 10;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        thead tr {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        th {
+            padding: 6px;
+            text-align: right;
+            font-weight: 600;
+            border-bottom: 1px solid #667eea;
+            white-space: nowrap;
+            font-size: 11px;
+        }
+        
+        td {
+            padding: 4px 6px;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
+            font-size: 10px;
+        }
+        
+        tbody tr {
+            transition: background-color 0.2s ease;
+        }
+        
+        tbody tr:hover {
+            background: #f3f4f6;
+        }
+        
+        tbody tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        
+        tbody tr:nth-child(even):hover {
+            background-color: #f3f4f6;
+        }
+        
+        tbody tr.highlight {
+            background-color: #fffbeb;
+            border-left: 4px solid #f59e0b;
+        }
+        
+        tbody tr.success-row {
+            background-color: #f0fdf4;
+            border-left: 4px solid #10b981;
+        }
+        
+        tbody tr.warning-row {
+            background-color: #fffbeb;
+            border-left: 4px solid #f59e0b;
+        }
+        
+        tbody tr.danger-row {
+            background-color: #fef2f2;
+            border-left: 4px solid #ef4444;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .badge.bg-blue-100 {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .badge.bg-green-100 {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        
+        .badge.bg-purple-100 {
+            background-color: #e9d5ff;
+            color: #7e22ce;
+        }
+        
+        .badge.bg-yellow-100 {
+            background-color: #fef9c3;
+            color: #854d0e;
+        }
+        
+        .badge-success {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .badge-danger {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .badge-info {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .badge-primary {
+            background: #e0e7ff;
+            color: #4338ca;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 5px;
+            border-radius: 3px;
+            text-align: center;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            margin: 1px;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .metric-value {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+        
+        .metric-label {
+            font-size: 11px;
+            opacity: 0.9;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            font-size: 12px;
+        }
+        
+        button:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #374151;
+        }
+        
+        .btn-secondary:hover {
+            background: #d1d5db;
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary:active {
+            transform: translateY(0);
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .search-input::placeholder {
+            color: #9ca3af;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transform: translateX(0);
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        
+        .alert.slide-in {
+            animation: slideIn 0.3s ease forwards;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #dc2626;
+        }
+        
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid #10b981;
+        }
+        
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border-left: 4px solid #3b82f6;
+        }
+        
+        .alert-close {
+            margin-right: auto;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: background-color 0.2s ease;
+        }
+        
+        .alert-close:hover {
+            background-color: rgba(0,0,0,0.1);
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in forwards;
+            opacity: 0;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .spinner {
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Pulse animation for loading states */
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        .number-format {
+            text-align: left;
+        }
+        
+        .text-right {
+            text-align: right;
+        }
+        
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+                margin: 0;
+            }
+            .container-main {
+                max-width: 100%;
+                padding: 0;
+                margin: 0;
+            }
+            .no-print {
+                display: none;
+            }
+            table {
+                font-size: 10px;
+                width: 100%;
+            }
+            .card {
+                margin: 0;
+                border-radius: 0;
+                box-shadow: none;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .container-main {
+                padding: 10px;
+            }
+            
+            .card {
+                border-radius: 8px;
+            }
+            
+            .p-8 {
+                padding: 0.25rem;
+            }
+            
+            .text-4xl {
+                font-size: 1.875rem;
+            }
+            
+            .text-xl {
+                font-size: 1.25rem;
+            }
+            
+            .table-container {
+                max-height: 400px;
+            }
+            
+            th, td {
+                padding: 8px;
+                font-size: 12px;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+            
+            .metric-card {
+                padding: 15px;
+            }
+            
+            .metric-value {
+                font-size: 24px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .flex.items-center.justify-between {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .text-4xl {
+                font-size: 1.5rem;
+            }
+            
+            .text-purple-100 {
+                font-size: 0.875rem;
+            }
+            
+            .upload-area {
+                padding: 20px;
+            }
+            
+            .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-4 {
+                grid-template-columns: 1fr;
+            }
+        }
+        /* Scroll to top button */
+        .scroll-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateY(20px);
+            z-index: 1000;
+        }
+        
+        .scroll-to-top.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .scroll-to-top:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container-main">
+        <!-- Header -->
+        <div class="card mb-8 shadow-2xl">
+            <div class="p-8 bg-gradient-to-r from-purple-600 to-indigo-700 text-white rounded-t-2xl">
+                <div class="flex items-center justify-between flex-wrap gap-4">
+                    <div>
+                        <h1 class="text-4xl font-bold mb-2">نظام المحاسبة والمخزون المتكامل</h1>
+                        <p class="text-purple-100 text-lg">معالجة ذكية لبيانات المشتريات والمبيعات والمخزون - نسخة محاسبية صحيحة</p>
+                    </div>
+                    <div class="bg-white bg-opacity-20 rounded-full p-4">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 21h18" />
+                            <path d="M7 21V3l10 18V3" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Section -->
+        <div class="card mb-8 no-print">
+            <div class="p-8">
+                <h2 class="text-2xl font-bold mb-6 text-gray-800">1. رفع ملف Excel</h2>
+                
+                <div id="uploadArea" class="upload-area mb-6 transition-all duration-300 hover:shadow-lg">
+                    <div class="flex flex-col items-center justify-center p-8">
+                        <div class="mb-6 p-4 bg-blue-100 rounded-full">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #667eea;">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                        </div>
+                        <p class="text-xl font-bold text-gray-700 mb-2">اسحب ملف Excel هنا أو انقر للاختيار</p>
+                        <p class="text-sm text-gray-500 mb-4">الملفات المدعومة: .xlsx (حتى 10 ميجابايت)</p>
+                        <div class="flex flex-wrap gap-2 justify-center">
+                            <span class="badge bg-blue-100 text-blue-800">مشتريات</span>
+                            <span class="badge bg-green-100 text-green-800">مبيعات</span>
+                            <span class="badge bg-purple-100 text-purple-800">المخزون</span>
+                            <span class="badge bg-yellow-100 text-yellow-800">الارصدة</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <input type="file" id="fileInput" accept=".xlsx" style="display: none;">
+                
+                <div id="alertContainer"></div>
+                
+                <div id="progressContainer" class="hidden mb-6">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-semibold text-gray-700">جاري معالجة الملف...</span>
+                        <span id="progressText" class="text-sm text-gray-500">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+                    </div>
+                    <div id="statusMessage" class="text-sm text-gray-600 mt-2"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metrics Section -->
+        <div id="metricsContainer" class="hidden mb-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+            <div class="metric-card transform transition-transform hover:scale-105">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="metric-label">إجمالي المشتريات</div>
+                    <div class="p-2 bg-white bg-opacity-20 rounded-lg">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="17 8 12 3 7 8" />
+                            <line x1="12" y1="3" x2="12" y2="15" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="metric-value" id="totalPurchases">0</div>
+                <div class="metric-label">وحدة</div>
+            </div>
+            <div class="metric-card transform transition-transform hover:scale-105">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="metric-label">إجمالي المبيعات</div>
+                    <div class="p-2 bg-white bg-opacity-20 rounded-lg">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 9v12" />
+                            <path d="M21 9v12" />
+                            <path d="M7 9V3a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v6" />
+                            <path d="M8 12h8" />
+                            <path d="M8 16h8" />
+                            <path d="M8 20h8" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="metric-value" id="totalSales">0</div>
+                <div class="metric-label">وحدة</div>
+            </div>
+            <div class="metric-card transform transition-transform hover:scale-105">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="metric-label">المخزون الفعلي</div>
+                    <div class="p-2 bg-white bg-opacity-20 rounded-lg">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M2 3h20" />
+                            <path d="M12 12v9" />
+                            <path d="M2 9h20" />
+                            <path d="M2 15h20" />
+                            <path d="M8 3v9" />
+                            <path d="M16 3v9" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="metric-value" id="totalInventory">0</div>
+                <div class="metric-label">وحدة</div>
+            </div>
+            <div class="metric-card transform transition-transform hover:scale-105">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="metric-label">عدد الموردين</div>
+                    <div class="p-2 bg-white bg-opacity-20 rounded-lg">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="metric-value" id="suppliersCount">0</div>
+                <div class="metric-label">مورد</div>
+            </div>
+        </div>
+
+        <!-- Reports Section -->
+        <div id="reportsContainer" class="hidden card">
+            <div class="p-8">
+                <h2 class="text-2xl font-bold mb-6 text-gray-800">2. التقارير والبيانات</h2>
+                
+                <!-- Export Buttons -->
+                <div class="button-group mb-8 no-print justify-center md:justify-start">
+                    <button class="btn-primary flex items-center gap-2 px-4 py-2" onclick="exportAllReports()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        تصدير جميع التقارير
+                    </button>
+                    <button class="btn-primary flex items-center gap-2 px-4 py-2" onclick="exportSupplierReport()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        تصدير تقرير المورد
+                    </button>
+                    <button class="btn-secondary flex items-center gap-2 px-4 py-2" onclick="window.print()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 6 2 18 2 18 9" />
+                            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                            <rect x="6" y="14" width="12" height="8" />
+                        </svg>
+                        طباعة
+                    </button>
+                </div>
+
+                <!-- Tabs Navigation -->
+                <div class="flex flex-wrap border-b border-gray-200 mb-6 gap-2 pb-2">
+                    <button class="tab-button active flex items-center gap-2" onclick="switchTab('netPurchases')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="17 8 12 3 7 8" />
+                            <line x1="12" y1="3" x2="12" y2="15" />
+                        </svg>
+                        صافي المشتريات
+                    </button>
+                    <button class="tab-button flex items-center gap-2" onclick="switchTab('netSales')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 9v12" />
+                            <path d="M21 9v12" />
+                            <path d="M7 9V3a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v6" />
+                            <path d="M8 12h8" />
+                            <path d="M8 16h8" />
+                            <path d="M8 20h8" />
+                        </svg>
+                        صافي المبيعات
+                    </button>
+                    <button class="tab-button flex items-center gap-2" onclick="switchTab('inventory')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M2 3h20" />
+                            <path d="M12 12v9" />
+                            <path d="M2 9h20" />
+                            <path d="M2 15h20" />
+                            <path d="M8 3v9" />
+                            <path d="M16 3v9" />
+                        </svg>
+                        المخزون الفعلي
+                    </button>
+                    <button class="tab-button flex items-center gap-2" onclick="switchTab('endingInventory')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                            <line x1="3" y1="9" x2="21" y2="9" />
+                            <line x1="9" y1="21" x2="9" y2="9" />
+                        </svg>
+                        المخزون النهائي
+                    </button>
+                    <button class="tab-button flex items-center gap-2" onclick="switchTab('bookInventory')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
+                        </svg>
+                        الجرد الدفتري
+                    </button>
+                    <button class="tab-button flex items-center gap-2" onclick="switchTab('costOfSales')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="1" x2="12" y2="23" />
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                        </svg>
+                        تكلفة المبيعات
+                    </button>
+                    <button class="tab-button flex items-center gap-2" onclick="switchTab('supplierPayables')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                        </svg>
+                        استحقاق الموردين
+                    </button>
+                    <button class="tab-button flex items-center gap-2" onclick="switchTab('supplierMovement')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                        </svg>
+                        حركة المورد
+                    </button>
+                </div>
+
+                <!-- Search Bar -->
+                <div class="mb-6 no-print">
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8" />
+                                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                            </svg>
+                        </div>
+                        <input type="text" id="searchInput" class="search-input pl-10" placeholder="ابحث في البيانات...">
+                    </div>
+                </div>
+
+                <!-- Tab Contents -->
+                <div id="netPurchases" class="tab-content">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">صافي المشتريات (بعد استنزاف المرتجعات)</h3>
+                    <div class="table-container">
+                        <table id="netPurchasesTable">
+                            <thead>
+                                <tr>
+                                    <th>م</th>
+                                    <th>رمز المادة</th>
+                                    <th>اسم المادة</th>
+                                    <th>الوحدة</th>
+                                    <th>الكمية</th>
+                                    <th>الافرادي</th>
+                                    <th>تاريخ الصلاحية</th>
+                                    <th>المورد</th>
+                                    <th>تاريخ العملية</th>
+                                    <th>نوع العملية</th>
+                                    <th>ملاحظات</th>
+                                    <th>القائمة</th>
+                                    <th>كمية الجرد</th>
+                                    <th>كمية المبيعات</th>
+                                    <th>رقم السجل</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="netSales" class="tab-content hidden">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">صافي المبيعات (بعد استنزاف المرتجعات)</h3>
+                    <div class="table-container">
+                        <table id="netSalesTable">
+                            <thead>
+                                <tr>
+                                    <th>م</th>
+                                    <th>رمز المادة</th>
+                                    <th>اسم المادة</th>
+                                    <th>الوحدة</th>
+                                    <th>الكمية</th>
+                                    <th>الافرادي</th>
+                                    <th>تاريخ الصلاحية</th>
+                                    <th>تاريخ العملية</th>
+                                    <th>نوع العملية</th>
+                                    <th>ملاحظات</th>
+                                    <th>القائمة</th>
+                                    <th>رقم السجل</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="inventory" class="tab-content hidden">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">المخزون الفعلي</h3>
+                    <div class="table-container">
+                        <table id="inventoryTable">
+                            <thead>
+                                <tr>
+                                    <th>م</th>
+                                    <th>رمز المادة</th>
+                                    <th>اسم المادة</th>
+                                    <th>الوحدة</th>
+                                    <th>الكمية</th>
+                                    <th>تاريخ الصلاحية</th>
+                                    <th>ملاحظات</th>
+                                    <th>القائمة</th>
+                                    <th>رقم السجل</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="endingInventory" class="tab-content hidden">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">المخزون النهائي</h3>
+                    <div class="table-container">
+                        <table id="endingInventoryTable">
+                            <thead>
+                                <tr>
+                                    <th>م</th>
+                                    <th>رمز المادة</th>
+                                    <th>اسم المادة</th>
+                                    <th>الوحدة</th>
+                                    <th>الكمية</th>
+                                    <th>تاريخ الصلاحية</th>
+                                    <th>القائمة</th>
+                                    <th>رقم السجل</th>
+                                    <th>الافرادي</th>
+                                    <th>تاريخ الشراء</th>
+                                    <th>المورد</th>
+                                    <th>الاجمالي</th>
+                                    <th>نوع العملية</th>
+                                    <th>ملاحظات</th>
+                                    <th>عمر الصنف</th>
+                                    <th>بيان الصلاحية</th>
+                                    <th>بيان الحركة</th>
+                                    <th>الحالة</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="bookInventory" class="tab-content hidden">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">الجرد الدفتري</h3>
+                    <div class="table-container">
+                        <table id="bookInventoryTable">
+                            <thead>
+                                <tr>
+                                    <th>م</th>
+                                    <th>رمز المادة</th>
+                                    <th>اسم المادة</th>
+                                    <th>الوحدة</th>
+                                    <th>الكمية</th>
+                                    <th>الافرادي</th>
+                                    <th>تاريخ الصلاحية</th>
+                                    <th>تاريخ العملية</th>
+                                    <th>المورد</th>
+                                    <th>نوع العملية</th>
+                                    <th>ملاحظات</th>
+                                    <th>رقم السجل</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="costOfSales" class="tab-content hidden">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">تكلفة المبيعات</h3>
+                    <div class="table-container">
+                        <table id="costOfSalesTable">
+                            <thead>
+                                <tr>
+                                    <th>م</th>
+                                    <th>رمز المادة</th>
+                                    <th>اسم المادة</th>
+                                    <th>الوحدة</th>
+                                    <th>الكمية</th>
+                                    <th>الافرادي</th>
+                                    <th>تاريخ الصلاحية</th>
+                                    <th>تاريخ العملية</th>
+                                    <th>ملاحظات</th>
+                                    <th>افرادي الشراء</th>
+                                    <th>تاريخ الشراء</th>
+                                    <th>المورد</th>
+                                    <th>افرادي الربح</th>
+                                    <th>نسبة الربح</th>
+                                    <th>اجمالي الربح</th>
+                                    <th>عمر العملية</th>
+                                    <th>رقم السجل</th>
+                                    <th>بيان الربحية</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="supplierPayables" class="tab-content hidden">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">استحقاق الموردين</h3>
+                    <div class="table-container">
+                        <table id="supplierPayablesTable">
+                            <thead>
+                                <tr>
+                                    <th>م</th>
+                                    <th>رمز الحساب</th>
+                                    <th>اسم المورد</th>
+                                    <th>مدين</th>
+                                    <th>دائن</th>
+                                    <th>الحساب المساعد</th>
+                                    <th>الرصيد</th>
+                                    <th>قيمة المخزون</th>
+                                    <th>الاستحقاق</th>
+                                    <th>المبلغ المستحق</th>
+                                    <th>راكد تماما</th>
+                                    <th>مخزون زائد</th>
+                                    <th>الاحتياج</th>
+                                    <th>أصناف جديدة</th>
+                                    <th>منتهي</th>
+                                    <th>قريب جدا</th>
+                                    <th>معد للارجاع</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="supplierMovement" class="tab-content hidden">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">حركة المورد</h3>
+                    <div class="mb-4 no-print">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">اختر المورد:</label>
+                        <select id="supplierSelect" class="search-input" onchange="updateSupplierMovement()">
+                            <option value="">-- اختر مورد --</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Part 1: Supplier Totals Report -->
+                    <div class="mb-8">
+                        <h4 class="text-lg font-bold mb-3 text-gray-700">تقرير اجمالي المورد</h4>
+                        <div class="table-container">
+                            <table id="supplierTotalsTable">
+                                <thead>
+                                    <tr>
+                                        <th>رصيد المورد</th>
+                                        <th>قيمة المخزون</th>
+                                        <th>الاستحقاق</th>
+                                        <th>المبلغ المستحق</th>
+                                        <th>قيمة المخزون الراكد</th>
+                                        <th>قيمة المخزون الزائد</th>
+                                        <th>قيمة الاحتياج</th>
+                                        <th>قيمة المعد للارجاع</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Part 2: Supplier Inventory Report -->
+                    <div class="mb-8">
+                        <h4 class="text-lg font-bold mb-3 text-gray-700">تقرير مخزون مورد</h4>
+                        <div class="table-container">
+                            <table id="supplierInventoryTable">
+                                <thead>
+                                    <tr>
+                                        <th>م</th>
+                                        <th>رمز المادة</th>
+                                        <th>اسم المادة</th>
+                                        <th>الوحدة</th>
+                                        <th>الكمية</th>
+                                        <th>افرادي الشراء</th>
+                                        <th>اجمالي الشراء</th>
+                                        <th>تاريخ الصلاحية</th>
+                                        <th>عمر الصنف</th>
+                                        <th>مبيعات الصنف</th>
+                                        <th>بيان الصلاحية</th>
+                                        <th>بيان الحركة</th>
+                                        <th>البيان</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Part 3: Supplier Return Items Report -->
+                    <div class="mb-8">
+                        <h4 class="text-lg font-bold mb-3 text-gray-700">تقرير مخزون مورد معد للارجاع</h4>
+                        <div class="table-container">
+                            <table id="supplierReturnItemsTable">
+                                <thead>
+                                    <tr>
+                                        <th>م</th>
+                                        <th>رمز المادة</th>
+                                        <th>اسم المادة</th>
+                                        <th>الوحدة</th>
+                                        <th>الكمية</th>
+                                        <th>افرادي الشراء</th>
+                                        <th>اجمالي الشراء</th>
+                                        <th>تاريخ الصلاحية</th>
+                                        <th>عمر الصنف</th>
+                                        <th>مبيعات الصنف</th>
+                                        <th>بيان الصلاحية</th>
+                                        <th>بيان الحركة</th>
+                                        <th>البيان</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scroll to Top Button -->
+    <div class="scroll-to-top" id="scrollToTop" onclick="scrollToTop()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="18 15 12 9 6 15" />
+        </svg>
+    </div>
+
+    <script>
+        // ============================================================
+        // متغيرات عامة
+        // ============================================================
+        let globalData = {
+            purchases: [],
+            sales: [],
+            inventory: [],
+            balances: [],
+            suppliers: new Set(),
+            endingInventory: []
+        };
+
+        let processedData = {
+            netPurchases: [],
+            netSales: [],
+            bookInventory: [],
+            costOfSales: [],
+            supplierPayables: [],
+            endingInventory: []
+        };
+
+        // ============================================================
+        // وظائف معالجة الملفات
+        // ============================================================
+
+        // تهيئة منطقة الرفع
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileUpload(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileUpload(e.target.files[0]);
+            }
+        });
+
+        // معالجة رفع الملف
+        function handleFileUpload(file) {
+            if (!file.name.endsWith('.xlsx')) {
+                showAlert('خطأ: يرجى اختيار ملف Excel بصيغة .xlsx', 'error');
+                return;
+            }
+
+            // زيادة حد حجم الملف للتعامل مع 100,000 سجل (حتى 100 ميجابايت)
+            if (file.size > 100 * 1024 * 1024) {
+                showAlert('خطأ: حجم الملف يتجاوز 100 ميجابايت', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    processExcelFile(e.target.result);
+                } catch (error) {
+                    showAlert(`خطأ في معالجة الملف: ${error.message}`, 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // معالجة ملف Excel
+        function processExcelFile(arrayBuffer) {
+            console.log('processExcelFile called with arrayBuffer size:', arrayBuffer ? arrayBuffer.byteLength : 'null');
+            
+            // Multi-layered validation for Excel files
+            if (arrayBuffer && arrayBuffer.byteLength > 0) {
+                // Layer 1: Check file magic numbers
+                try {
+                    const view = new Uint8Array(arrayBuffer, 0, Math.min(8, arrayBuffer.byteLength));
+                    const signature = Array.from(view).map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+                    
+                    console.log('File signature analysis:', {
+                        signature: signature,
+                        bytes: Array.from(view),
+                        length: arrayBuffer.byteLength
+                    });
+                    
+                    // Check for XLSX signature (PK zip format)
+                    const isXLSX = signature.startsWith('504B0304') || signature.startsWith('504B0506') || signature.startsWith('504B0708');
+                    
+                    // Check for XLS signature (Compound File Binary Format)
+                    const isXLS = signature.startsWith('D0CF11E0A1B11AE1');
+                    
+                    // Layer 2: Validate minimum file size
+                    const isFileSizeValid = arrayBuffer.byteLength >= 512;
+                    
+                    console.log('Validation results:', {
+                        isXLSX: isXLSX,
+                        isXLS: isXLS,
+                        isFileSizeValid: isFileSizeValid,
+                        expectedFormats: 'XLSX (.xlsx) or XLS (.xls)'
+                    });
+                    
+                    // Early exit with descriptive messages
+                    if (!isFileSizeValid) {
+                        showAlert('خطأ في معالجة الملف: الملف صغير جداً (' + arrayBuffer.byteLength + ' بايت). الحد الأدنى المطلوب هو 512 بايت. قد يكون الملف تالفًا أو غير صالح.', 'error');
+                        return;
+                    }
+                    
+                    if (!isXLSX && !isXLS) {
+                        const formatMessage = signature === '00000000' ? 'الملف فارغ بالكامل' : 
+                                            signature.startsWith('504B') ? 'ملف مضغوط غير مكتمل' :
+                                            'تنسيق ملف غير مدعوم';
+                        
+                        showAlert('خطأ في معالجة الملف: ' + formatMessage + '. التوقيع الفعلي: 0x' + signature + '. يرجى التأكد من أن الملف ملف Excel صالح (.xlsx أو .xls).', 'error');
+                        return;
+                    }
+                } catch (validationError) {
+                    console.error('File validation error:', validationError);
+                    showAlert('خطأ في التحقق من صحة الملف: ' + validationError.message, 'error');
+                    return;
+                }
+            } else {
+                showAlert('خطأ في معالجة الملف: لم يتم استلام بيانات الملف بشكل صحيح.', 'error');
+                return;
+            }
+            
+            showProgress(true);
+            updateProgress(10, 'جاري قراءة الملف...');
+
+            // استخدام Web Worker لمعالجة الملف لتجنب حظر واجهة المستخدم
+            if (typeof Worker !== 'undefined') {
+                console.log('Creating inline Web Worker');
+                
+                // إنشاء Web Worker داخلي بدلًا من الملف الخارجي
+                const workerCode = `
+                    self.onmessage = function(e) {
+                        try {
+                            console.log('Web Worker started processing file');
+                            
+                            // Multi-layered validation for Excel files (Layer 3: Re-verify in Web Worker)
+                            const arrayBuffer = e.data.arrayBuffer;
+                            console.log('Received arrayBuffer with byte length:', arrayBuffer ? arrayBuffer.byteLength : 'null');
+                            
+                            // Layer 1: Check that arrayBuffer exists and is valid
+                            if (!arrayBuffer) {
+                                throw new Error('لم يتم استلام بيانات الملف بشكل صحيح.');
+                            }
+                            
+                            // Layer 2: Validate minimum file size
+                            if (arrayBuffer.byteLength === 0) {
+                                throw new Error('الملف فارغ. يرجى اختيار ملف Excel صالح.');
+                            }
+                            
+                            if (arrayBuffer.byteLength < 512) {
+                                throw new Error('الملف صغير جداً (' + arrayBuffer.byteLength + ' بايت). الحد الأدنى المطلوب هو 512 بايت. قد يكون الملف تالفًا أو غير صالح.');
+                            }
+                            
+                            // Layer 1 & 4: Check file signature (magic numbers) and log for debugging
+                            try {
+                                const view = new Uint8Array(arrayBuffer, 0, Math.min(8, arrayBuffer.byteLength));
+                                const signature = Array.from(view).map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+                                
+                                console.log('File signature analysis in Web Worker:', {
+                                    signature: signature,
+                                    bytes: Array.from(view),
+                                    length: arrayBuffer.byteLength
+                                });
+                                
+                                // Check for XLSX signature (PK zip format)
+                                const isXLSX = signature.startsWith('504B0304') || signature.startsWith('504B0506') || signature.startsWith('504B0708');
+                                
+                                // Check for XLS signature (Compound File Binary Format)
+                                const isXLS = signature.startsWith('D0CF11E0A1B11AE1');
+                                
+                                // Log signature analysis results
+                                console.log('Web Worker validation results:', {
+                                    isXLSX: isXLSX,
+                                    isXLS: isXLS,
+                                    expectedFormats: 'XLSX (.xlsx) or XLS (.xls)'
+                                });
+                                
+                                // Final validation check
+                                if (!isXLSX && !isXLS) {
+                                    const formatMessage = signature === '00000000' ? 'الملف فارغ بالكامل' : 
+                                                        signature.startsWith('504B') ? 'ملف مضغوط غير مكتمل' :
+                                                        'تنسيق ملف غير مدعوم';
+                                    
+                                    throw new Error(formatMessage + '. التوقيع الفعلي: 0x' + signature + '. يرجى التأكد من أن الملف ملف Excel صالح (.xlsx أو .xls).');
+                                }
+                            } catch (signatureError) {
+                                console.warn('File signature validation error:', signatureError);
+                                // Continue processing but log the warning
+                            }
+                            
+                            // محاولة تحميل مكتبة XLSX مع معالجة الأخطاء
+                            try {
+                                console.log('Attempting to load XLSX library');
+                                importScripts('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
+                                console.log('XLSX library loaded successfully');
+                            } catch (importError) {
+                                console.error('Failed to load XLSX library:', importError);
+                                throw new Error('فشل في تحميل مكتبة معالجة ملفات Excel. تحقق من اتصال الإنترنت.');
+                            }
+                            
+                            // تسجيل معلومات التصحيح
+                            console.log('Starting to process Excel file with size:', arrayBuffer.byteLength, 'bytes');
+                            
+                            // تحسين أداء قراءة الملفات الكبيرة
+                            let workbook;
+                            try {
+                                console.log('Attempting to read workbook');
+                                workbook = XLSX.read(arrayBuffer, { 
+                                    type: 'array',
+                                    cellDates: true,
+                                    cellNF: false,
+                                    cellText: false,
+                                    sheetRows: 100000 // تحديد الحد الأقصى للصفوف
+                                });
+                                console.log('Workbook loaded successfully with sheets:', workbook.SheetNames);
+                            } catch (readError) {
+                                console.error('Error reading workbook:', readError);
+                                // تقديم رسالة خطأ أكثر تحديداً بناءً على نوع الخطأ
+                                if (readError.message && readError.message.includes('password')) {
+                                    throw new Error('الملف محمي بكلمة مرور. يرجى إزالة الحماية قبل تحميل الملف.');
+                                } else if (readError.message && (readError.message.includes('format') || readError.message.includes('CFB'))) {
+                                    throw new Error('تنسيق الملف غير مدعوم. يرجى التأكد من أن الملف بتنسيق Excel (.xlsx, .xls).');
+                                } else if (readError.message && readError.message.includes('magic number')) {
+                                    throw new Error('الملف غير صالح. يرجى التأكد من أن الملف هو ملف Excel حقيقي وليس ملف نصي أو ملف آخر переименован إلى .xlsx');
+                                } else if (readError.message && readError.message.includes('Unexpected')) {
+                                    throw new Error('تنسيق الملف غير متوقع. قد يكون الملف تالفًا أو من نوع غير مدعوم.');
+                                } else {
+                                    throw new Error('الملف تالف أو غير صالح. يرجى التحقق من صحة ملف Excel والمحاولة مرة أخرى. التفاصيل: ' + (readError.message || 'خطأ غير معروف'));
+                                }
+                            }
+                            
+                            // التحقق من وجود الأوراق المطلوبة
+                            const requiredSheets = ['مشتريات', 'مبيعات', 'المخزون'];
+                            const missingSheets = [];
+                            
+                            for (const sheetName of requiredSheets) {
+                                if (!workbook.SheetNames.includes(sheetName)) {
+                                    missingSheets.push(sheetName);
+                                }
+                            }
+                            
+                            if (missingSheets.length > 0) {
+                                throw new Error(\`الملف لا يحتوي على الأوراق المطلوبة التالية: \${missingSheets.join(', ')}. يرجى التأكد من أن الملف يحتوي على جميع الأوراق المطلوبة.\`);
+                            }
+                            
+                            // Process required sheets
+                            const result = {};
+                            
+                            for (const sheetName of requiredSheets) {
+                                try {
+                                    console.log(\`Processing sheet: \${sheetName}\`);
+                                    // تحسين أداء معالجة الأوراق الكبيرة
+                                    result[sheetName] = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {
+                                        raw: true,
+                                        dateNF: 'yyyy-mm-dd'
+                                    });
+                                    console.log(\`Sheet \${sheetName} processed with \${result[sheetName].length} rows\`);
+                                    
+                                    // التحقق من أن الورقة تحتوي على بيانات
+                                    if (!result[sheetName] || result[sheetName].length === 0) {
+                                        throw new Error(\`ورقة "\${sheetName}" فارغة أو لا تحتوي على بيانات.\`);
+                                    }
+                                } catch (sheetError) {
+                                    console.error(\`Error processing sheet \${sheetName}:\`, sheetError);
+                                    throw new Error(\`حدث خطأ أثناء معالجة ورقة "\${sheetName}": \${sheetError.message}\`);
+                                }
+                            }
+                            
+                            // Process balances sheet if it exists
+                            if (workbook.SheetNames.includes('الارصدة')) {
+                                try {
+                                    result['الارصدة'] = XLSX.utils.sheet_to_json(workbook.Sheets['الارصدة'], {
+                                        raw: true,
+                                        dateNF: 'yyyy-mm-dd'
+                                    });
+                                    console.log(\`Balances sheet processed with \${result['الارصدة'].length} rows\`);
+                                } catch (balancesError) {
+                                    console.warn('Warning: Could not process "الارصدة" sheet:', balancesError.message);
+                                    result['الارصدة'] = [];
+                                }
+                            }
+                            
+                            console.log('Processing completed successfully');
+                            self.postMessage({
+                                success: true,
+                                data: result
+                            });
+                        } catch (error) {
+                            // التأكد من أن رسالة الخطأ ليست فارغة أو غير معرفة
+                            // معالجة الحالة الخاصة عندما يكون الخطأ كائن Event
+                            let errorMessage;
+                            if (error instanceof Error) {
+                                errorMessage = error.message || error.toString();
+                            } else if (typeof error === 'object' && error !== null) {
+                                // التعامل مع كائنات Event وغيرها من الكائنات
+                                if (error.message) {
+                                    errorMessage = error.message;
+                                } else if (error.type) {
+                                    // تحسين رسالة الخطأ عندما يكون النوع "error"
+                                    if (error.type === 'error') {
+                                        errorMessage = 'حدث خطأ أثناء معالجة ملف Excel. قد يكون الملف تالفًا أو بصيغة غير مدعومة.';
+                                    } else {
+                                        errorMessage = \`حدث خطأ في الشبكة: \${error.type}\`;
+                                    }
+                                } else {
+                                    errorMessage = JSON.stringify(error);
+                                    // إذا كان الناتج "[object Object]" نستبدلها برسالة أكثر وضوحاً
+                                    if (errorMessage === '[object Object]' || errorMessage.includes('[object')) {
+                                        errorMessage = 'حدث خطأ غير معروف أثناء معالجة الملف';
+                                    }
+                                }
+                            } else {
+                                errorMessage = String(error) || 'حدث خطأ غير معروف أثناء معالجة الملف';
+                            }
+                            
+                            // تسجيل الخطأ في وحدة التحكم لمساعدة المطورين
+                            console.error('Web Worker Error:', error);
+                            
+                            // إضافة معلومات إضافية للمساعدة في التشخيص
+                            if (errorMessage.includes('تالف') || errorMessage.includes('غير مدعوم') || errorMessage.includes('غير صالح')) {
+                                errorMessage += ' يرجى التحقق من صحة الملف والتأكد من أنه ملف Excel (.xlsx) صالح.';
+                            }
+                            
+                            self.postMessage({
+                                success: false,
+                                error: errorMessage
+                            });
+                        }
+                    };
+                `;
+                
+                // Create Blob and URL for the inline worker
+                const blob = new Blob([workerCode], { type: 'application/javascript' });
+                const workerUrl = URL.createObjectURL(blob);
+                const worker = new Worker(workerUrl);
+                
+                worker.onmessage = function(e) {
+                    console.log('Received message from Web Worker:', e.data);
+                    worker.terminate();
+                    URL.revokeObjectURL(workerUrl); // Clean up the URL
+                    
+                    if (!e.data.success) {
+                        showProgress(false);
+                        // التأكد من أن رسالة الخطأ ليست فارغة أو غير معرفة
+                        // معالجة الحالة الخاصة عندما يكون الخطأ "[object Event]"
+                        let errorMessage = e.data.error || 'حدث خطأ غير معروف أثناء معالجة الملف';
+                        if (typeof errorMessage === 'string' && errorMessage.includes('[object')) {
+                            errorMessage = 'حدث خطأ في الشبكة أو في تحميل الملف';
+                        }
+                        // تحسين رسالة الخطأ عندما تكون رسالة عامة
+                        if (errorMessage === 'error') {
+                            errorMessage = 'حدث خطأ أثناء معالجة ملف Excel. قد يكون الملف تالفًا أو بصيغة غير مدعومة.';
+                        }
+                        
+                        // إضافة معلومات إضافية للمساعدة في التشخيص
+                        if (errorMessage.includes('تالف') || errorMessage.includes('غير مدعوم') || errorMessage.includes('غير صالح')) {
+                            errorMessage += ' يرجى التحقق من صحة الملف والتأكد من أنه ملف Excel (.xlsx) صالح.';
+                        }
+                        
+                        // تحسين الرسائل الخاصة بكل نوع من الأخطاء
+                        if (errorMessage.includes('كلمة مرور')) {
+                            errorMessage += ' يجب إزالة الحماية بكلمة المرور من الملف قبل تحميله.';
+                        } else if (errorMessage.includes('تنسيق الملف غير مدعوم')) {
+                            errorMessage += ' يرجى التأكد من أن الملف بتنسيق Excel (.xlsx أو .xls) وليس تنسيق آخر.';
+                        } else if (errorMessage.includes('الملف فارغ')) {
+                            errorMessage += ' يرجى اختيار ملف يحتوي على بيانات.';
+                        } else if (errorMessage.includes('الأوراق المطلوبة')) {
+                            errorMessage += ' يجب أن يحتوي الملف على الأوراق التالية: مشتريات، مبيعات، المخزون.';
+                        } else if (errorMessage.includes('غير متوقع')) {
+                            errorMessage += ' قد يكون الملف تالفًا. يرجى محاولة فتح الملف في Excel والتحقق من صحته.';
+                        }
+                        
+                        showAlert(`خطأ في معالجة الملف: ${errorMessage}`, 'error');
+                        return;
+                    }
+                    
+                    try {
+                        updateProgress(30, 'جاري استخراج البيانات...');
+                        
+                        // معالجة البيانات من Web Worker
+                        const data = e.data.data;
+                        
+                        // التحقق من أن البيانات موجودة وليست فارغة
+                        if (!data) {
+                            throw new Error('لم يتم استخراج أي بيانات من الملف');
+                        }
+                        
+                        if (!data['مشتريات'] || !Array.isArray(data['مشتريات'])) {
+                            throw new Error('الملف لا يحتوي على ورقة مشتريات صحيحة');
+                        }
+                        
+                        if (!data['مبيعات'] || !Array.isArray(data['مبيعات'])) {
+                            throw new Error('الملف لا يحتوي على ورقة مبيعات صحيحة');
+                        }
+                        
+                        if (!data['المخزون'] || !Array.isArray(data['المخزون'])) {
+                            throw new Error('الملف لا يحتوي على ورقة مخزون صحيحة');
+                        }
+                        
+                        // التحقق من أن الأوراق تحتوي على بيانات
+                        if (data['مشتريات'].length === 0) {
+                            throw new Error('ورقة مشتريات فارغة. يرجى التأكد من أن الورقة تحتوي على بيانات.');
+                        }
+                        
+                        if (data['مبيعات'].length === 0) {
+                            throw new Error('ورقة مبيعات فارغة. يرجى التأكد من أن الورقة تحتوي على بيانات.');
+                        }
+                        
+                        if (data['المخزون'].length === 0) {
+                            throw new Error('ورقة مخزون فارغة. يرجى التأكد من أن الورقة تحتوي على بيانات.');
+                        }
+                        
+                        // تعيين البيانات إلى المتغيرات العامة
+                        globalData.purchases = data['مشتريات'];
+                        globalData.sales = data['مبيعات'];
+                        globalData.inventory = data['المخزون'];
+                        globalData.balances = data['الارصدة'] || [];
+                        
+                        // التحقق من حجم البيانات
+                        const totalRecords = globalData.purchases.length + globalData.sales.length + globalData.inventory.length;
+                        if (totalRecords > 100000) {
+                            showAlert(`تحذير: الملف يحتوي على ${totalRecords.toLocaleString()} سجل. قد تستغرق المعالجة وقتاً أطول.`, 'warning');
+                        }
+                        
+                        updateProgress(50, 'جاري تنظيف البيانات...');
+                        cleanData();
+                        
+                        updateProgress(70, 'جاري معالجة البيانات المحاسبية...');
+                        // استخدام async/await للتعامل مع الوظائف غير المتزامنة
+                        processAccountingData().then(() => {
+                            updateProgress(90, 'جاري إنشاء التقارير...');
+                            generateReports();
+                            
+                            updateProgress(100, 'تمت المعالجة بنجاح!');
+                            setTimeout(() => {
+                                showProgress(false);
+                                const reportsContainer = document.getElementById('reportsContainer');
+                                const metricsContainer = document.getElementById('metricsContainer');
+                                
+                                reportsContainer.classList.remove('hidden');
+                                metricsContainer.classList.remove('hidden');
+                                
+                                // إضافة تأثير التلاشي
+                                reportsContainer.classList.add('fade-in');
+                                metricsContainer.classList.add('fade-in');
+                                
+                                showAlert('تم تحميل البيانات بنجاح!', 'success');
+                                populateTables();
+                                updateMetrics();
+                            }, 500);
+                        }).catch(error => {
+                            showProgress(false);
+                            const errorMessage = getErrorMessage(error);
+                            showAlert(`خطأ في معالجة البيانات: ${errorMessage}`, 'error');
+                        });
+                        
+                    } catch (error) {
+                        showProgress(false);
+                        const errorMessage = getErrorMessage(error);
+                        showAlert(`خطأ: ${errorMessage}`, 'error');
+                    }
+                };
+                
+                worker.onerror = function(error) {
+                    console.error('Web Worker error:', error);
+                    worker.terminate();
+                    URL.revokeObjectURL(workerUrl); // Clean up the URL
+                    showProgress(false);
+                    // التأكد من أن رسالة الخطأ ليست فارغة أو غير معرفة
+                    // معالجة الحالة الخاصة عندما يكون الخطأ كائن Event
+                    let errorMessage;
+                    if (error instanceof Error) {
+                        errorMessage = error.message || error.toString();
+                    } else if (typeof error === 'object' && error !== null) {
+                        if (error.message) {
+                            errorMessage = error.message;
+                        } else if (error.type) {
+                            // تحسين رسالة الخطأ عندما يكون النوع "error"
+                            if (error.type === 'error') {
+                                errorMessage = 'حدث خطأ أثناء تحميل أو معالجة ملف Excel. قد يكون الملف تالفًا أو بصيغة غير مدعومة.';
+                            } else {
+                                errorMessage = `حدث خطأ في Web Worker: ${error.type}`;
+                            }
+                        } else {
+                            errorMessage = 'حدث خطأ غير معروف في Web Worker';
+                        }
+                    } else {
+                        errorMessage = String(error) || 'حدث خطأ غير معروف في Web Worker';
+                    }
+                    
+                    // التعامل مع "[object Event]"
+                    if (typeof errorMessage === 'string' && errorMessage.includes('[object')) {
+                        errorMessage = 'حدث خطأ في الشبكة أو في تحميل ملف Web Worker';
+                    }
+                    
+                    // تسجيل الخطأ في وحدة التحكم لمساعدة المطورين
+                    console.error('Web Worker Error:', error);
+                    
+                    // إضافة معلومات إضافية للمساعدة في التشخيص
+                    if (errorMessage.includes('تالف') || errorMessage.includes('غير مدعوم') || errorMessage.includes('غير صالح')) {
+                        errorMessage += ' يرجى التحقق من صحة الملف والتأكد من أنه ملف Excel (.xlsx) صالح.';
+                    }
+                    
+                    // تحسين الرسائل الخاصة بكل نوع من الأخطاء
+                    if (errorMessage.includes('كلمة مرور')) {
+                        errorMessage += ' يجب إزالة الحماية بكلمة المرور من الملف قبل تحميله.';
+                    } else if (errorMessage.includes('تنسيق الملف غير مدعوم')) {
+                        errorMessage += ' يرجى التأكد من أن الملف بتنسيق Excel (.xlsx أو .xls) وليس تنسيق آخر.';
+                    } else if (errorMessage.includes('الملف فارغ')) {
+                        errorMessage += ' يرجى اختيار ملف يحتوي على بيانات.';
+                    } else if (errorMessage.includes('الأوراق المطلوبة')) {
+                        errorMessage += ' يجب أن يحتوي الملف على الأوراق التالية: مشتريات، مبيعات، المخزون.';
+                    } else if (errorMessage.includes('Web Worker')) {
+                        errorMessage += ' قد يكون هناك مشكلة في تحميل ملف excelWorker.js. يرجى التحقق من اتصال الإنترنت والمحاولة مرة أخرى.';
+                    } else if (errorMessage.includes('غير متوقع')) {
+                        errorMessage += ' قد يكون الملف تالفًا. يرجى محاولة فتح الملف في Excel والتحقق من صحته.';
+                    }
+                    
+                    showAlert(`خطأ في معالجة الملف: ${errorMessage}`, 'error');
+                };
+                
+                // إرسال البيانات إلى Web Worker
+                console.log('Sending data to Web Worker');
+                worker.postMessage({ arrayBuffer: arrayBuffer });
+            } else {
+                // التراجع إلى المعالجة المتزامنة إذا لم تكن Web Workers مدعومة
+                console.log('Web Workers not supported, using synchronous processing');
+                setTimeout(() => {
+                    try {
+                        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                        updateProgress(30, 'جاري استخراج البيانات...');
+
+                        // قراءة الأوراق المطلوبة
+                        const sheetNames = workbook.SheetNames;
+                        
+                        if (!sheetNames.includes('مشتريات') || !sheetNames.includes('مبيعات') || 
+                            !sheetNames.includes('المخزون')) {
+                            throw new Error('الملف لا يحتوي على الأوراق المطلوبة (مشتريات، مبيعات، المخزون)');
+                        }
+
+                        // قراءة البيانات من كل ورقة
+                        const purchases = XLSX.utils.sheet_to_json(workbook.Sheets['مشتريات']);
+                        const sales = XLSX.utils.sheet_to_json(workbook.Sheets['مبيعات']);
+                        const inventory = XLSX.utils.sheet_to_json(workbook.Sheets['المخزون']);
+                        
+                        // التحقق من أن البيانات موجودة وليست فارغة
+                        if (!purchases || !Array.isArray(purchases)) {
+                            throw new Error('ورقة مشتريات غير صحيحة');
+                        }
+                        
+                        if (!sales || !Array.isArray(sales)) {
+                            throw new Error('ورقة مبيعات غير صحيحة');
+                        }
+                        
+                        if (!inventory || !Array.isArray(inventory)) {
+                            throw new Error('ورقة مخزون غير صحيحة');
+                        }
+                        
+                        // التحقق من أن الأوراق تحتوي على بيانات
+                        if (purchases.length === 0) {
+                            throw new Error('ورقة مشتريات فارغة. يرجى التأكد من أن الورقة تحتوي على بيانات.');
+                        }
+                        
+                        if (sales.length === 0) {
+                            throw new Error('ورقة مبيعات فارغة. يرجى التأكد من أن الورقة تحتوي على بيانات.');
+                        }
+                        
+                        if (inventory.length === 0) {
+                            throw new Error('ورقة مخزون فارغة. يرجى التأكد من أن الورقة تحتوي على بيانات.');
+                        }
+                        
+                        globalData.purchases = purchases;
+                        globalData.sales = sales;
+                        globalData.inventory = inventory;
+                        
+                        if (sheetNames.includes('الارصدة')) {
+                            const balances = XLSX.utils.sheet_to_json(workbook.Sheets['الارصدة']);
+                            globalData.balances = Array.isArray(balances) ? balances : [];
+                        } else {
+                            globalData.balances = [];
+                        }
+                        
+                        // التحقق من حجم البيانات
+                        const totalRecords = globalData.purchases.length + globalData.sales.length + globalData.inventory.length;
+                        if (totalRecords > 100000) {
+                            showAlert(`تحذير: الملف يحتوي على ${totalRecords.toLocaleString()} سجل. قد تستغرق المعالجة وقتاً أطول.`, 'warning');
+                        }
+
+                        updateProgress(50, 'جاري تنظيف البيانات...');
+                        cleanData();
+
+                        updateProgress(70, 'جاري معالجة البيانات المحاسبية...');
+                        // استخدام async/await للتعامل مع الوظائف غير المتزامنة
+                        processAccountingData().then(() => {
+                            updateProgress(90, 'جاري إنشاء التقارير...');
+                            generateReports();
+                            
+                            updateProgress(100, 'تمت المعالجة بنجاح!');
+                            setTimeout(() => {
+                                showProgress(false);
+                                const reportsContainer = document.getElementById('reportsContainer');
+                                const metricsContainer = document.getElementById('metricsContainer');
+                                
+                                reportsContainer.classList.remove('hidden');
+                                metricsContainer.classList.remove('hidden');
+                                
+                                // إضافة تأثير التلاشي
+                                reportsContainer.classList.add('fade-in');
+                                metricsContainer.classList.add('fade-in');
+                                
+                                showAlert('تم تحميل البيانات بنجاح!', 'success');
+                                populateTables();
+                                updateMetrics();
+                            }, 500);
+                        }).catch(error => {
+                            showProgress(false);
+                            const errorMessage = getErrorMessage(error);
+                            showAlert(`خطأ في معالجة البيانات: ${errorMessage}`, 'error');
+                        });
+
+                    } catch (error) {
+                        showProgress(false);
+                        const errorMessage = getErrorMessage(error);
+                        showAlert(`خطأ: ${errorMessage}`, 'error');
+                    }
+                }, 500);
+            }
+        }
+
+
+        // ============================================================
+        // وظائف تنظيف البيانات
+        // ============================================================
+
+        function cleanData() {
+            updateProgress(50, 'جاري تنظيف البيانات...');
+            
+            // تنظيف بيانات المشتريات
+            globalData.purchases = globalData.purchases
+                .filter(row => row['الكمية'] && parseFloat(row['الكمية']) !== 0)
+                .map(row => ({
+                    ...row,
+                    'الكمية': parseFloat(row['الكمية']) || 0,
+                    'الافرادي': parseFloat(row['الافرادي']) || 0,
+                    'تاريخ العملية': formatDate(row['تاريخ العملية']),
+                    'تاريخ الصلاحية': formatDate(row['تاريخ الصلاحية'])
+                }));
+
+            // تنظيف بيانات المبيعات
+            globalData.sales = globalData.sales
+                .filter(row => row['الكمية'] && parseFloat(row['الكمية']) !== 0)
+                .map(row => ({
+                    ...row,
+                    'الكمية': parseFloat(row['الكمية']) || 0,
+                    'الافرادي': parseFloat(row['الافرادي']) || 0,
+                    'تاريخ العملية': formatDate(row['تاريخ العملية']),
+                    'تاريخ الصلاحية': formatDate(row['تاريخ الصلاحية'])
+                }));
+
+            // تنظيف بيانات المخزون وتقسيمها إلى قوائم موجبة وسالبة
+            globalData.inventory = globalData.inventory
+                .filter(row => row['الكمية'] && parseFloat(row['الكمية']) !== 0)
+                .map((row, index) => ({
+                    ...row,
+                    'الكمية': parseFloat(row['الكمية']) || 0,
+                    'تاريخ الصلاحية': formatDate(row['تاريخ الصلاحية']),
+                    'م': index + 1, // تحديث الرقم التسلسلي
+                    'ملاحظات': row['الكمية'] < 0 ? 'سالب' : 'موجب',
+                    'القائمة': row['الكمية'] > 0 ? 'E' : 'F', // قائمة E: موجبة، قائمة F: سالبة
+                    'رقم السجل': ''
+                }));
+
+            // تنظيف بيانات الأرصدة
+            globalData.balances = globalData.balances
+                .filter(row => row['مدين'] || row['دائن'])
+                .map(row => ({
+                    ...row,
+                    'مدين': parseFloat(row['مدين']) || 0,
+                    'دائن': parseFloat(row['دائن']) || 0
+                }));
+
+            // جمع أسماء الموردين
+            globalData.purchases.forEach(row => {
+                if (row['المورد']) {
+                    globalData.suppliers.add(row['المورد']);
+                }
+            });
+            
+            // تحرير الذاكرة من البيانات الأصلية إذا كانت كبيرة جداً
+            if (globalData.purchases.length > 50000 || 
+                globalData.sales.length > 50000 || 
+                globalData.inventory.length > 50000) {
+                updateProgress(50, 'جاري تحرير الذاكرة...');
+                // إجبار جمع القمامة إذا كان متاحاً
+                if (window.gc) {
+                    window.gc();
+                }
+            }
+        }
+
+        // إضافة وظيفة لتحرير الذاكرة
+        function freeMemory() {
+            if (window.gc) {
+                window.gc();
+            }
+        }
+
+        // إضافة وظيفة لتقدير استهلاك الذاكرة
+        function estimateMemoryUsage() {
+            const purchasesSize = globalData.purchases.length * 500; // تقدير بـ 500 بايت لكل سجل
+            const salesSize = globalData.sales.length * 500;
+            const inventorySize = globalData.inventory.length * 500;
+            const balancesSize = globalData.balances.length * 300;
+            
+            const totalSize = purchasesSize + salesSize + inventorySize + balancesSize;
+            return Math.round(totalSize / (1024 * 1024)); // العودة بالميغابايت
+        }
+
+        // تحويل التاريخ إلى صيغة ISO
+        function formatDate(dateValue) {
+            if (!dateValue) return '';
+            
+            if (typeof dateValue === 'string') {
+                // محاولة تحويل النص مباشرة
+                const date = new Date(dateValue);
+                if (!isNaN(date.getTime())) {
+                    return date.toISOString().split('T')[0];
+                }
+            }
+            
+            // إذا كان رقماً (Excel serial date)
+            if (typeof dateValue === 'number') {
+                const date = new Date((dateValue - 25569) * 86400 * 1000);
+                return date.toISOString().split('T')[0];
+            }
+            
+            return '';
+        }
+
+        // مقارنة التواريخ
+        function isDateAfterOrEqual(date1, date2) {
+            if (!date1 || !date2) return false;
+            const d1 = new Date(date1);
+            const d2 = new Date(date2);
+            return d1 >= d2;
+        }
+
+        // تقريب رقم إلى أقرب رقم عشري
+        function roundToDecimal(num, decimals = 1) {
+            return Math.round(num * Math.pow(10, decimals)) / Math.pow(10, decimals);
+        }
+
+        // حساب انحراف السعر (±1%)
+        function isPriceWithinDeviation(price1, price2, deviation = 0.01) {
+            if (price1 === 0 && price2 === 0) return true;
+            if (price1 === 0 || price2 === 0) return false;
+            const diff = Math.abs(price1 - price2) / price1;
+            return diff <= deviation;
+        }
+
+        // حساب عدد الأيام منذ تاريخ معين
+        function calculateDaysSince(dateString) {
+            if (!dateString) return 0;
+            const date = new Date(dateString);
+            const today = new Date();
+            const diffTime = Math.abs(today - date);
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        }
+
+        // الحصول على حالة الصلاحية
+        function getExpiryStatus(expiryDate) {
+            if (!expiryDate) return '';
+            const today = new Date();
+            const expiry = new Date(expiryDate);
+            const diffDays = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+            
+            if (diffDays < 0) return 'منتهي';
+            if (diffDays <= 31) return 'منتهي';
+            if (diffDays <= 181) return 'قريب جدا';
+            if (diffDays <= 365) return 'قريب';
+            return 'بعيد';
+        }
+
+        // حساب مبيعات آخر 90 يومًا
+        function calculateSalesLast90Days(itemCode, netSales) {
+            const today = new Date();
+            const ninetyDaysAgo = new Date(today.getTime() - (90 * 24 * 60 * 60 * 1000));
+            
+            return netSales
+                .filter(s => s['رمز المادة'] === itemCode && 
+                       s['القائمة'] === 'C' && // فقط المبيعات الفعلية
+                       new Date(s['تاريخ العملية']) >= ninetyDaysAgo)
+                .reduce((sum, s) => sum + s['الكمية'], 0);
+        }
+
+        // الحصول على حالة الحركة بناءً على مبيعات آخر 90 يومًا
+        function getMovementStatus(itemCode, netSales, currentQuantity) {
+            const sales90Days = calculateSalesLast90Days(itemCode, netSales);
+            
+            if (sales90Days === 0) return 'راكد تماما';
+            if (currentQuantity > sales90Days * 1.5) return 'مخزون زائد';
+            if (currentQuantity < sales90Days * 0.5) return 'احتياج';
+            return 'مناسب';
+        }
+
+        // الحصول على حالة الصنف
+        function getItemStatus(expiryStatus, movementStatus, itemAge) {
+            if (expiryStatus === 'منتهي') return 'منتهي';
+            if (movementStatus === 'راكد تماما') return 'معد للارجاع';
+            if (itemAge < 90) return 'صنف جديد';
+            return 'مناسب';
+        }
+
+        // ============================================================
+        // وظائف المعالجة المحاسبية - المرحلة 1: المعمارية الأساسية
+        // ============================================================
+
+        async function processAccountingData() {
+            try {
+                // تقدير حجم البيانات لتقدير وقت المعالجة
+                const totalRecords = globalData.purchases.length + globalData.sales.length + globalData.inventory.length;
+                const isLargeDataset = totalRecords > 50000;
+                
+                // المرحلة 1: حساب صافي المشتريات بالمفاتيح الثمانية التابعة
+                updateProgress(70, 'جاري حساب صافي المشتريات...');
+                processedData.netPurchases = await calculateNetPurchases();
+                updateProgress(72, `تم حساب صافي المشتريات (${processedData.netPurchases.length} سجل)`);
+
+                // المرحلة 2: حساب صافي المبيعات بالمفاتيح العشرة التابعة
+                updateProgress(73, 'جاري حساب صافي المبيعات...');
+                processedData.netSales = calculateNetSales();
+                updateProgress(74, `تم حساب صافي المبيعات (${processedData.netSales.length} سجل)`);
+
+                // المرحلة 2: معالجة المخزون الفعلي ونقل القائمة F
+                updateProgress(75, 'جاري معالجة المخزون الفعلي...');
+                processPhysicalInventory();
+                updateProgress(76, 'تم معالجة المخزون الفعلي');
+
+                // المرحلة 3: نقل قائمة B إلى صافي المبيعات
+                updateProgress(77, 'جاري نقل قائمة B...');
+                transferListBtoNetSales();
+                updateProgress(78, 'تم نقل قائمة B');
+
+                // المرحلة 4: حساب المخزون النهائي بالتسلسل الصحيح
+                updateProgress(79, 'جاري حساب المخزون النهائي...');
+                processedData.endingInventory = calculateEndingInventory();
+                updateProgress(80, `تم حساب المخزون النهائي (${processedData.endingInventory.length} سجل)`);
+
+                // المرحلة 5: حساب الجرد الدفتري بالمفاتيح التابعة
+                updateProgress(81, 'جاري حساب الجرد الدفتري...');
+                processedData.bookInventory = calculateBookInventory();
+                updateProgress(82, `تم حساب الجرد الدفتري (${processedData.bookInventory.length} سجل)`);
+
+                // المرحلة 6: حساب تكلفة المبيعات
+                updateProgress(83, 'جاري حساب تكلفة المبيعات...');
+                processedData.costOfSales = calculateCostOfSales();
+                updateProgress(84, `تم حساب تكلفة المبيعات (${processedData.costOfSales.length} سجل)`);
+
+                // المرحلة 7: حساب استحقاق الموردين
+                updateProgress(84, 'جاري حساب استحقاق الموردين...');
+                processedData.supplierPayables = calculateSupplierPayables();
+                updateProgress(85, `تم حساب استحقاق الموردين (${processedData.supplierPayables.length} سجل)`);
+                
+                // إكمال المعالجة
+                updateProgress(85, 'جاري إكمال المعالجة...');
+                
+                // عرض معلومات الذاكرة إذا كانت البيانات كبيرة
+                if (isLargeDataset) {
+                    const memoryUsage = estimateMemoryUsage();
+                    updateProgress(85, `استهلاك الذاكرة: حوالي ${memoryUsage} ميجابايت`);
+                }
+                
+            } catch (error) {
+                throw new Error(`خطأ في معالجة البيانات المحاسبية: ${error.message}`);
+            }
+        }
+
+        function processPhysicalInventory() {
+            // تقسيم المخزون إلى قوائم موجبة (E) وسالبة (F)
+            const positiveInventory = globalData.inventory.filter(item => item['الكمية'] > 0);
+            const negativeInventory = globalData.inventory.filter(item => item['الكمية'] < 0);
+
+            // تحديث قائمة المخزون لتشمل القوائم
+            globalData.inventory = globalData.inventory.map(item => ({
+                ...item,
+                'القائمة': item['الكمية'] > 0 ? 'E' : 'F',
+                'ملاحظات': item['الكمية'] < 0 ? 'سالب' : 'موجب'
+            }));
+
+            // نقل الكميات السالبة إلى صافي المبيعات بإشارة موجبة
+            if (negativeInventory.length > 0) {
+                const negativeSales = negativeInventory.map(item => ({
+                    ...item,
+                    'الكمية': Math.abs(item['الكمية']), // تحويل إلى كمية موجبة
+                    'نوع العملية': 'مبيعات',
+                    'ملاحظات': 'من المخزون الفعلي',
+                    'القائمة': 'F',
+                    'رقم السجل': '',
+                    'تاريخ العملية': new Date().toISOString().split('T')[0] // تاريخ اليوم
+                }));
+                
+                // إضافة إلى صافي المبيعات
+                processedData.netSales = [...processedData.netSales, ...negativeSales];
+            }
+        }
+
+        function transferListBtoNetSales() {
+            // تصفية سجلات القائمة B من صافي المشتريات
+            const listBRecords = processedData.netPurchases.filter(p => p['القائمة'] === 'B');
+            
+            if (listBRecords.length > 0) {
+                // تحويلها إلى سجلات موجبة وإضافة إلى صافي المبيعات
+                const transferredRecords = listBRecords.map(item => ({
+                    'م': processedData.netSales.length + 1,
+                    'رمز المادة': item['رمز المادة'],
+                    'اسم المادة': item['اسم المادة'],
+                    'الوحدة': item['الوحدة'],
+                    'الكمية': Math.abs(item['الكمية']),
+                    'الافرادي': item['الافرادي'],
+                    'تاريخ الصلاحية': item['تاريخ الصلاحية'],
+                    'تاريخ العملية': item['تاريخ العملية'],
+                    'نوع العملية': 'مبيعات', // تغيير النوع إلى مبيعات
+                    'ملاحظات': 'مرتجع مشتريات يتم transfer',
+                    'القائمة': 'B',
+                    'رقم السجل': item['رقم السجل'] || ''
+                }));
+                
+                processedData.netSales = [...processedData.netSales, ...transferredRecords];
+                processedData.netSales.sort((a, b) => new Date(b['تاريخ العملية']) - new Date(a['تاريخ العملية']));
+            }
+        }
+
+        // تحسين أداء معالجة المرتجعات باستخدام خوارزمية أكثر كفاءة
+        function calculateNetPurchases() {
+            updateProgress(71, 'جاري معالجة المشتريات والمرتجعات...');
+            
+            // 1. فصل المشتريات والمرتجعات
+            const purchases = globalData.purchases.filter(p => !p['نوع العملية']?.includes('مرتجع'));
+            const returns = globalData.purchases.filter(p => p['نوع العملية']?.includes('مرتجع'));
+
+            // 2. ترتيب المشتريات والمرتجعات حسب التاريخ (الأحدث أولاً)
+            updateProgress(71, 'جاري ترتيب البيانات...');
+            purchases.sort((a, b) => new Date(b['تاريخ العملية']) - new Date(a['تاريخ العملية']));
+            returns.sort((a, b) => new Date(b['تاريخ العملية']) - new Date(a['تاريخ العملية']));
+
+            // 3. إنشاء نسخة قابلة للتعديل من المشتريات
+            const purchaseRecords = purchases.map((p, idx) => ({
+                ...p,
+                index: idx,
+                remainingQty: p['الكمية'],
+                processed: false
+            }));
+
+            // 4. إنشاء خريطة للمشتريات حسب رمز المادة لتحسين الأداء
+            updateProgress(71, 'جاري إنشاء خريطة البيانات...');
+            const purchaseMap = new Map();
+            purchaseRecords.forEach((purchase, idx) => {
+                const itemCode = purchase['رمز المادة'];
+                if (!purchaseMap.has(itemCode)) {
+                    purchaseMap.set(itemCode, []);
+                }
+                purchaseMap.get(itemCode).push(purchase);
+            });
+
+            // 5. معالجة كل مرتجع باستخدام الخريطة لتحسين الأداء
+            const orphanReturns = [];
+            let recordNumber = 1;
+
+            // تقسيم معالجة المرتجعات إلى دفعات لتجنب حظر واجهة المستخدم
+            return new Promise((resolve) => {
+                let processedReturns = 0;
+                const batchSize = 100;
+                const totalReturns = returns.length;
+                
+                function processBatch(startIndex) {
+                    const endIndex = Math.min(startIndex + batchSize, totalReturns);
+                    
+                    for (let i = startIndex; i < endIndex; i++) {
+                        const ret = returns[i];
+                        let remainingReturnQty = ret['الكمية'];
+                        const retDate = ret['تاريخ العملية'];
+                        const itemCode = ret['رمز المادة'];
+
+                        // الحصول على المشتريات المطابقة فقط من الخريطة
+                        const matchingPurchases = purchaseMap.get(itemCode) || [];
+
+                        // تطبيق المفاتيح بالترتيب
+                        for (let keyLevel = 1; keyLevel <= 8 && remainingReturnQty > 0; keyLevel++) {
+                            // البحث عن المشتريات المطابقة لهذا المفتاح
+                            const filteredPurchases = matchingPurchases.filter(p => 
+                                !p.processed && 
+                                isDateAfterOrEqual(retDate, p['تاريخ العملية'])
+                            );
+
+                            if (filteredPurchases.length === 0) continue;
+
+                            // تطبيق المفتاح حسب المستوى
+                            for (let j = 0; j < filteredPurchases.length && remainingReturnQty > 0; j++) {
+                                const purchase = filteredPurchases[j];
+                                let match = false;
+
+                                switch(keyLevel) {
+                                    case 1: // (رمز المادة، الكمية، اسم المورد، تاريخ الصلاحية، الافرادي)
+                                        match = purchase['الكمية'] === ret['الكمية'] &&
+                                               purchase['المورد'] === ret['المورد'] &&
+                                               purchase['تاريخ الصلاحية'] === ret['تاريخ الصلاحية'] &&
+                                               purchase['الافرادي'] === ret['الافرادي'];
+                                        break;
+                                    case 2: // (رمز المادة، اسم المورد، تاريخ الصلاحية، الافرادي بعد التقريب) + تاريخ
+                                        match = purchase['المورد'] === ret['المورد'] &&
+                                               purchase['تاريخ الصلاحية'] === ret['تاريخ الصلاحية'] &&
+                                               roundToDecimal(purchase['الافرادي']) === roundToDecimal(ret['الافرادي']) &&
+                                               purchase['الكمية'] === ret['الكمية'];
+                                        break;
+                                    case 3: // (رمز المادة، اسم المورد، تاريخ الصلاحية) + تاريخ
+                                        match = purchase['المورد'] === ret['المورد'] &&
+                                               purchase['تاريخ الصلاحية'] === ret['تاريخ الصلاحية'];
+                                        break;
+                                    case 4: // (رمز المادة، تاريخ الصلاحية، الافرادي) + تاريخ
+                                        match = purchase['تاريخ الصلاحية'] === ret['تاريخ الصلاحية'] &&
+                                               isPriceWithinDeviation(purchase['الافرادي'], ret['الافرادي']);
+                                        break;
+                                    case 5: // (رمز المادة، تاريخ الصلاحية) + تاريخ
+                                        match = purchase['تاريخ الصلاحية'] === ret['تاريخ الصلاحية'];
+                                        break;
+                                    case 6: // (رمز المادة، اسم المورد، الافرادي) + تاريخ
+                                        match = purchase['المورد'] === ret['المورد'] &&
+                                               isPriceWithinDeviation(purchase['الافرادي'], ret['الافرادي']);
+                                        break;
+                                    case 7: // (رمز المادة، اسم المورد) + تاريخ
+                                        match = purchase['المورد'] === ret['المورد'];
+                                        break;
+                                    case 8: // (رمز المادة) + تاريخ
+                                        match = true;
+                                        break;
+                                }
+
+                                if (match) {
+                                    const deductQty = Math.min(remainingReturnQty, purchase.remainingQty);
+                                    purchase.remainingQty -= deductQty;
+                                    remainingReturnQty -= deductQty;
+
+                                    if (purchase.remainingQty === 0) {
+                                        purchase.processed = true;
+                                    }
+                                }
+                            }
+                        }
+
+                        // إذا بقي من المرتجع، إضافته كيتيم
+                        if (remainingReturnQty > 0) {
+                            orphanReturns.push({
+                                ...ret,
+                                'الكمية': remainingReturnQty,
+                                'يتيم': true
+                            });
+                        }
+                        
+                        processedReturns++;
+                    }
+                    
+                    // تحديث شريط التقدم
+                    const progress = Math.round((processedReturns / totalReturns) * 30) + 50;
+                    updateProgress(progress, `جاري معالجة المرتجعات... (${processedReturns}/${totalReturns})`);
+                    
+                    if (endIndex < totalReturns) {
+                        setTimeout(() => processBatch(endIndex), 0);
+                    } else {
+                        // 6. بناء النتيجة
+                        updateProgress(72, 'جاري بناء النتائج...');
+                        const netPurchases = [];
+                        
+                        // إضافة المشتريات المتبقية (قائمة A)
+                        purchaseRecords.forEach(p => {
+                            if (p.remainingQty > 0) {
+                                netPurchases.push({
+                                    ...p,
+                                    'م': recordNumber++,
+                                    'الكمية': p.remainingQty,
+                                    'نوع العملية': 'مشتريات',
+                                    'ملاحظات': p.remainingQty === p['الكمية'] ? 'لايوجد مرتجع' : 'مطابق',
+                                    'القائمة': 'A',
+                                    'كمية الجرد': 0,
+                                    'كمية المبيعات': 0,
+                                    'رقم السجل': ''
+                                });
+                            }
+                        });
+
+                        // إضافة المرتجعات اليتيمة (قائمة B)
+                        orphanReturns.forEach(ret => {
+                            netPurchases.push({
+                                'م': recordNumber++,
+                                'رمز المادة': ret['رمز المادة'],
+                                'اسم المادة': ret['اسم المادة'],
+                                'الوحدة': ret['الوحدة'] || '',
+                                'الكمية': ret['الكمية'],
+                                'الافرادي': ret['الافرادي'] || 0,
+                                'تاريخ الصلاحية': ret['تاريخ الصلاحية'] || '',
+                                'تاريخ العملية': ret['تاريخ العملية'] || '',
+                                'المورد': ret['المورد'] || '',
+                                'نوع العملية': 'مرتجع',
+                                'ملاحظات': 'يتيم',
+                                'القائمة': 'B',
+                                'كمية الجرد': 0,
+                                'كمية المبيعات': 0,
+                                'رقم السجل': ret['رقم السجل'] || '',
+                                'يتيم': true
+                            });
+                        });
+                        
+                        resolve(netPurchases);
+                    }
+                }
+                
+                if (totalReturns > 0) {
+                    processBatch(0);
+                } else {
+                    // 6. بناء النتيجة
+                    const netPurchases = [];
+                    
+                    // إضافة المشتريات المتبقية (قائمة A)
+                    purchaseRecords.forEach(p => {
+                        if (p.remainingQty > 0) {
+                            netPurchases.push({
+                                ...p,
+                                'م': recordNumber++,
+                                'الكمية': p.remainingQty,
+                                'نوع العملية': 'مشتريات',
+                                'ملاحظات': p.remainingQty === p['الكمية'] ? 'لايوجد مرتجع' : 'مطابق',
+                                'القائمة': 'A',
+                                'كمية الجرد': 0,
+                                'كمية المبيعات': 0,
+                                'رقم السجل': ''
+                            });
+                        }
+                    });
+                    
+                    resolve(netPurchases);
+                }
+            });
+        }
+
+        // تحسين أداء حساب صافي المبيعات
+        function calculateNetSales() {
+            updateProgress(73, 'جاري معالجة المبيعات...');
+            
+            // 1. فصل المبيعات والمرتجعات
+            const sales = globalData.sales.filter(s => !s['نوع العملية']?.includes('مرتجع'));
+            const returns = globalData.sales.filter(s => s['نوع العملية']?.includes('مرتجع'));
+
+            // 2. ترتيب المبيعات والمرتجعات حسب التاريخ (الأحدث أولاً)
+            sales.sort((a, b) => new Date(b['تاريخ العملية']) - new Date(a['تاريخ العملية']));
+            returns.sort((a, b) => new Date(b['تاريخ العملية']) - new Date(a['تاريخ العملية']));
+
+            // 3. إنشاء نسخة قابلة للتعديل من المبيعات
+            const salesRecords = sales.map((s, idx) => ({
+                ...s,
+                index: idx,
+                remainingQty: s['الكمية'],
+                processed: false
+            }));
+
+            // 4. إنشاء خريطة للمبيعات حسب رمز المادة لتحسين الأداء
+            const salesMap = new Map();
+            salesRecords.forEach((sale, idx) => {
+                const itemCode = sale['رمز المادة'];
+                if (!salesMap.has(itemCode)) {
+                    salesMap.set(itemCode, []);
+                }
+                salesMap.get(itemCode).push(sale);
+            });
+
+            // 5. معالجة كل مرتجع باستخدام الخريطة لتحسين الأداء
+            const orphanReturns = [];
+            let recordNumber = 1;
+
+            returns.forEach((ret, idx) => {
+                let remainingReturnQty = ret['الكمية'];
+                const retDate = ret['تاريخ العملية'];
+                const itemCode = ret['رمز المادة'];
+
+                // الحصول على المبيعات المطابقة فقط من الخريطة
+                const matchingSales = salesMap.get(itemCode) || [];
+
+                // تطبيق المفاتيح بالترتيب
+                for (let keyLevel = 1; keyLevel <= 10 && remainingReturnQty > 0; keyLevel++) {
+                    // البحث عن المبيعات المطابقة لهذا المفتاح
+                    const filteredSales = matchingSales.filter(s => 
+                        !s.processed && 
+                        isDateAfterOrEqual(retDate, s['تاريخ العملية'])
+                    );
+
+                    if (filteredSales.length === 0) continue;
+
+                    // تطبيق المفتاح حسب المستوى
+                    for (let i = 0; i < filteredSales.length && remainingReturnQty > 0; i++) {
+                        const sale = filteredSales[i];
+                        let match = false;
+
+                        switch(keyLevel) {
+                            case 1: // (رمز المادة، الكمية، اسم العميل، تاريخ الصلاحية، الافرادي)
+                                match = sale['الكمية'] === ret['الكمية'] &&
+                                       sale['المورد'] === ret['المورد'] && // استخدام المورد كعميل
+                                       sale['تاريخ الصلاحية'] === ret['تاريخ الصلاحية'] &&
+                                       sale['الافرادي'] === ret['الافرادي'];
+                                break;
+                            case 2: // (رمز المادة، اسم العميل، تاريخ الصلاحية، الافرادي بعد التقريب) + تاريخ
+                                match = sale['المورد'] === ret['المورد'] &&
+                                       sale['تاريخ الصلاحية'] === ret['تاريخ الصلاحية'] &&
+                                       roundToDecimal(sale['الافرادي']) === roundToDecimal(ret['الافرادي']) &&
+                                       sale['الكمية'] === ret['الكمية'];
+                                break;
+                            case 3: // (رمز المادة، اسم العميل، تاريخ الصلاحية) + تاريخ
+                                match = sale['المورد'] === ret['المورد'] &&
+                                       sale['تاريخ الصلاحية'] === ret['تاريخ الصلاحية'];
+                                break;
+                            case 4: // (رمز المادة، تاريخ الصلاحية، الافرادي) + تاريخ
+                                match = sale['تاريخ الصلاحية'] === ret['تاريخ الصلاحية'] &&
+                                       isPriceWithinDeviation(sale['الافرادي'], ret['الافرادي']);
+                                break;
+                            case 5: // (رمز المادة، تاريخ الصلاحية) + تاريخ
+                                match = sale['تاريخ الصلاحية'] === ret['تاريخ الصلاحية'];
+                                break;
+                            case 6: // (رمز المادة، اسم العميل، الافرادي) + تاريخ
+                                match = sale['المورد'] === ret['المورد'] &&
+                                       isPriceWithinDeviation(sale['الافرادي'], ret['الافرادي']);
+                                break;
+                            case 7: // (رمز المادة، اسم العميل) + تاريخ
+                                match = sale['المورد'] === ret['المورد'];
+                                break;
+                            case 8: // (رمز المادة، الافرادي) + تاريخ
+                                match = isPriceWithinDeviation(sale['الافرادي'], ret['الافرادي']);
+                                break;
+                            case 9: // (رمز المادة) + تاريخ
+                                match = true;
+                                break;
+                            case 10: // (رمز المادة) + تاريخ
+                                match = true;
+                                break;
+                        }
+
+                        if (match) {
+                            const deductQty = Math.min(remainingReturnQty, sale.remainingQty);
+                            sale.remainingQty -= deductQty;
+                            remainingReturnQty -= deductQty;
+
+                            if (sale.remainingQty === 0) {
+                                sale.processed = true;
+                            }
+                        }
+                    }
+                }
+
+                // إذا بقي من المرتجع، إضافته كيتيم
+                if (remainingReturnQty > 0) {
+                    orphanReturns.push({
+                        ...ret,
+                        'الكمية': remainingReturnQty,
+                        'يتيم': true
+                    });
+                }
+            });
+
+            // 6. بناء النتيجة
+            const netSales = [];
+            
+            // إضافة المبيعات المتبقية (قائمة C)
+            salesRecords.forEach(s => {
+                if (s.remainingQty > 0) {
+                    netSales.push({
+                        ...s,
+                        'م': recordNumber++,
+                        'الكمية': s.remainingQty,
+                        'نوع العملية': 'مبيعات',
+                        'ملاحظات': s.remainingQty === s['الكمية'] ? 'لايوجد مرتجع' : 'مطابق',
+                        'القائمة': 'C',
+                        'رقم السجل': ''
+                    });
+                }
+            });
+
+            // إضافة المرتجعات اليتيمة (قائمة D)
+            orphanReturns.forEach(ret => {
+                netSales.push({
+                    'م': recordNumber++,
+                    'رمز المادة': ret['رمز المادة'],
+                    'اسم المادة': ret['اسم المادة'],
+                    'الوحدة': ret['الوحدة'] || '',
+                    'الكمية': ret['الكمية'],
+                    'الافرادي': ret['الافرادي'] || 0,
+                    'تاريخ الصلاحية': ret['تاريخ الصلاحية'] || '',
+                    'تاريخ العملية': ret['تاريخ العملية'] || '',
+                    'المورد': ret['المورد'] || '', // استخدام المورد كعميل
+                    'نوع العملية': 'مرتجع مبيعات',
+                    'ملاحظات': 'يتيم',
+                    'القائمة': 'D',
+                    'رقم السجل': ret['رقم السجل'] || '',
+                    'يتيم': true
+                });
+            });
+
+            return netSales;
+        }
+
+        function calculateEndingInventory() {
+            // استخدام المخزون الفعلي (قائمة E) كأساس
+            const physicalInventory = globalData.inventory.filter(item => item['القائمة'] === 'E');
+            
+            // ترتيب المخزون الفعلي حسب رمز المادة وتاريخ الصلاحية (الأقدم أولاً)
+            physicalInventory.sort((a, b) => {
+                if (a['رمز المادة'] !== b['رمز المaterial']) {
+                    return a['رمز المادة'].localeCompare(b['رمز المادة']);
+                }
+                return new Date(a['تاريخ الصلاحية']) - new Date(b['تاريخ الصلاحية']);
+            });
+
+            // ترتيب صافي المشتريات حسب رمز المادة وتاريخ الصلاحية
+            const sortedNetPurchases = [...processedData.netPurchases].sort((a, b) => {
+                if (a['رمز المادة'] !== b['رمز المادة']) {
+                    return a['رمز المادة'].localeCompare(b['رمز المادة']);
+                }
+                return new Date(a['تاريخ الصلاحية']) - new Date(b['تاريخ الصلاحية']);
+            });
+
+            const endingInventory = [];
+            let recordNumber = 1;
+
+            // معالجة كل سجل في المخزون الفعلي
+            for (let i = 0; i < physicalInventory.length; i++) {
+                const inventoryItem = physicalInventory[i];
+                let remainingPhysicalQty = inventoryItem['الكمية'];
+                let matched = false;
+
+                // البحث عن مطابقات في صافي المشتريات
+                for (let j = 0; j < sortedNetPurchases.length && remainingPhysicalQty > 0; j++) {
+                    const purchase = sortedNetPurchases[j];
+                    
+                    // تجاهل السجلات التي تمت معالجتها بالكامل
+                    if (purchase['كمية الجرد'] > 0 && purchase['كمية الجرد'] === purchase['الكمية']) {
+                        continue;
+                    }
+
+                    // المفتاح 1: (رمز المادة، تاريخ الصلاحية)
+                    if (purchase['رمز المادة'] === inventoryItem['رمز المادة'] && 
+                        purchase['تاريخ الصلاحية'] === inventoryItem['تاريخ الصلاحية']) {
+                        matched = true;
+                        
+                        // تطبيق منطق المطابقة
+                        if (remainingPhysicalQty === purchase['الكمية']) {
+                            // تطابق كلي
+                            endingInventory.push(createEndingInventoryRecord(
+                                inventoryItem, purchase, recordNumber++, 
+                                purchase['الكمية'], purchase['الافرادي'], 'مطابق'
+                            ));
+                            
+                            purchase['كمية الجرد'] = remainingPhysicalQty;
+                            purchase['رقم السجل'] = inventoryItem['م'];
+                            remainingPhysicalQty = 0;
+                        } else if (remainingPhysicalQty > purchase['الكمية']) {
+                            // كمية المخزون الفعلي أكبر
+                            endingInventory.push(createEndingInventoryRecord(
+                                inventoryItem, purchase, recordNumber++, 
+                                purchase['الكمية'], purchase['الافرادي'], 'مطابق'
+                            ));
+                            
+                            // تقسيم سجل المخزون الفعلي
+                            const remainingInventory = {
+                                ...inventoryItem,
+                                'الكمية': remainingPhysicalQty - purchase['الكمية'],
+                                'م': recordNumber++
+                            };
+                            physicalInventory.splice(i + 1, 0, remainingInventory);
+                            
+                            purchase['كمية الجرد'] = purchase['الكمية'];
+                            purchase['رقم السجل'] = inventoryItem['م'];
+                            remainingPhysicalQty = 0;
+                        } else {
+                            // كمية المخزون الفعلي أقل
+                            endingInventory.push(createEndingInventoryRecord(
+                                inventoryItem, purchase, recordNumber++, 
+                                remainingPhysicalQty, purchase['الافرادي'], 'مطابق'
+                            ));
+                            
+                            // تقسيم سجل صافي المشتريات
+                            const remainingPurchase = {
+                                ...purchase,
+                                'الكمية': purchase['الكمية'] - remainingPhysicalQty,
+                                'م': recordNumber++
+                            };
+                            sortedNetPurchases.splice(j + 1, 0, remainingPurchase);
+                            
+                            purchase['الكمية'] = remainingPhysicalQty;
+                            purchase['كمية الجرد'] = remainingPhysicalQty;
+                            purchase['رقم السجل'] = inventoryItem['م'];
+                            remainingPhysicalQty = 0;
+                        }
+                        break; // تم العثور على مطابقة
+                    } else if (!matched) {
+                        // المفتاح 2: (رمز المادة) فقط
+                        if (purchase['رمز المادة'] === inventoryItem['رمز المادة']) {
+                            matched = true;
+                            
+                            // نفس منطق المطابقة
+                            if (remainingPhysicalQty === purchase['الكمية']) {
+                                endingInventory.push(createEndingInventoryRecord(
+                                    inventoryItem, purchase, recordNumber++, 
+                                    purchase['الكمية'], purchase['الافرادي'], 'مطابق'
+                                ));
+                                
+                                purchase['كمية الجرد'] = remainingPhysicalQty;
+                                purchase['رقم السجل'] = inventoryItem['م'];
+                                remainingPhysicalQty = 0;
+                            } else if (remainingPhysicalQty > purchase['الكمية']) {
+                                endingInventory.push(createEndingInventoryRecord(
+                                    inventoryItem, purchase, recordNumber++, 
+                                    purchase['الكمية'], purchase['الافرادي'], 'مطابق'
+                                ));
+                                
+                                const remainingInventory = {
+                                    ...inventoryItem,
+                                    'الكمية': remainingPhysicalQty - purchase['الكمية'],
+                                    'م': recordNumber++
+                                };
+                                physicalInventory.splice(i + 1, 0, remainingInventory);
+                                
+                                purchase['كمية الجرد'] = purchase['الكمية'];
+                                purchase['رقم السجل'] = inventoryItem['م'];
+                                remainingPhysicalQty = 0;
+                            } else {
+                                endingInventory.push(createEndingInventoryRecord(
+                                    inventoryItem, purchase, recordNumber++, 
+                                    remainingPhysicalQty, purchase['الافرادي'], 'مطابق'
+                                ));
+                                
+                                const remainingPurchase = {
+                                    ...purchase,
+                                    'الكمية': purchase['الكمية'] - remainingPhysicalQty,
+                                    'م': recordNumber++
+                                };
+                                sortedNetPurchases.splice(j + 1, 0, remainingPurchase);
+                                
+                                purchase['الكمية'] = remainingPhysicalQty;
+                                purchase['كمية الجرد'] = remainingPhysicalQty;
+                                purchase['رقم السجل'] = inventoryItem['م'];
+                                remainingPhysicalQty = 0;
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                // إذا لم يتم العثور على مطابقة
+                if (!matched && remainingPhysicalQty > 0) {
+                    endingInventory.push({
+                        ...inventoryItem,
+                        'م': recordNumber++,
+                        'القائمة': 'E',
+                        'رقم السجل': '',
+                        'الافرادي': 0,
+                        'تاريخ الشراء': '',
+                        'المورد': '',
+                        'الاجمالي': 0,
+                        'نوع العملية': '',
+                        'ملاحظات': 'لايوجد مشتريات',
+                        'عمر الصنف': 0,
+                        'بيان الصلاحية': getExpiryStatus(inventoryItem['تاريخ الصلاحية']),
+                        'بيان الحركة': 'راكد تماما',
+                        'الحالة': 'معد للارجاع'
+                    });
+                }
+            }
+
+            return endingInventory;
+        }
+
+        function createEndingInventoryRecord(inventoryItem, purchase, recordNumber, quantity, price, notes) {
+            const itemAge = calculateDaysSince(purchase['تاريخ العملية']);
+            const expiryStatus = getExpiryStatus(inventoryItem['تاريخ الصلاحية']);
+            const movementStatus = getMovementStatus(
+                purchase['رمز المادة'], 
+                processedData.netSales, 
+                quantity
+            );
+            const itemStatus = getItemStatus(expiryStatus, movementStatus, itemAge);
+
+            return {
+                ...inventoryItem,
+                'م': recordNumber,
+                'القائمة': 'E',
+                'رقم السجل': purchase['م'],
+                'الافرادي': price,
+                'تاريخ الشراء': purchase['تاريخ العملية'],
+                'المورد': purchase['المورد'],
+                'الاجمالي': price * quantity,
+                'نوع العملية': purchase['نوع العملية'],
+                'ملاحظات': notes,
+                'عمر الصنف': itemAge,
+                'بيان الصلاحية': expiryStatus,
+                'بيان الحركة': movementStatus,
+                'الحالة': itemStatus
+            };
+        }
+
+        function calculateBookInventory() {
+            // جمع صافي المشتريات المتبقي (الذي لم يستهلكه الجرد الفعلي)
+            const remainingPurchases = processedData.netPurchases
+                .filter(p => (p['القائمة'] === 'A' || p['القائمة'] === 'D') && 
+                       (p['كمية الجرد'] === 0 || p['كمية الجرد'] === undefined));
+
+            // جمع صافي المبيعات
+            const allSales = processedData.netSales.filter(s => 
+                s['القائمة'] === 'C' || s['القائمة'] === 'B' || s['القائمة'] === 'F');
+
+            // بناء خريطة للمشتريات
+            const purchaseMap = {};
+            remainingPurchases.forEach(p => {
+                const key = p['رمز المادة'];
+                if (!purchaseMap[key]) {
+                    purchaseMap[key] = [];
+                }
+                purchaseMap[key].push({
+                    ...p,
+                    remainingQty: p['الكمية'],
+                    matched: false
+                });
+            });
+
+            // معالجة المبيعات بالمفاتيح التابعة
+            allSales.forEach(sale => {
+                let remainingSaleQty = sale['الكمية'];
+                const saleDate = sale['تاريخ العملية'];
+                const itemCode = sale['رمز المادة'];
+                const purchases = purchaseMap[itemCode] || [];
+
+                for (let keyLevel = 1; keyLevel <= 4 && remainingSaleQty > 0; keyLevel++) {
+                    for (let i = 0; i < purchases.length && remainingSaleQty > 0; i++) {
+                        const purchase = purchases[i];
+                        if (purchase.matched) continue;
+
+                        let match = false;
+                        switch(keyLevel) {
+                            case 1: // (رمز المادة، تاريخ الصلاحية، الكمية) + تاريخ
+                                match = purchase['تاريخ الصلاحية'] === sale['تاريخ الصلاحية'] &&
+                                       purchase['الكمية'] === remainingSaleQty &&
+                                       isDateAfterOrEqual(saleDate, purchase['تاريخ العملية']);
+                                break;
+                            case 2: // (رمز المادة، تاريخ الصلاحية) + تاريخ
+                                match = purchase['تاريخ الصلاحية'] === sale['تاريخ الصلاحية'] &&
+                                       isDateAfterOrEqual(saleDate, purchase['تاريخ العملية']);
+                                break;
+                            case 3: // (رمز المادة) + تاريخ
+                                match = isDateAfterOrEqual(saleDate, purchase['تاريخ العملية']);
+                                break;
+                            case 4: // (رمز المادة) + تاريخ أصغر بـ3 أيام
+                                const threeDays = 3 * 24 * 60 * 60 * 1000;
+                                const saleTime = new Date(saleDate).getTime();
+                                const purchaseTime = new Date(purchase['تاريخ العملية']).getTime();
+                                match = (purchaseTime - saleTime) <= threeDays;
+                                break;
+                        }
+
+                        if (match) {
+                            const deductQty = Math.min(remainingSaleQty, purchase.remainingQty);
+                            purchase.remainingQty -= deductQty;
+                            remainingSaleQty -= deductQty;
+                            sale['مطابق'] = true;
+
+                            if (purchase.remainingQty === 0) {
+                                purchase.matched = true;
+                            }
+                        }
+                    }
+                }
+            });
+
+            // بناء الجرد الدفتري
+            const bookInventory = [];
+            let recordNumber = 1;
+            
+            // إضافة المشتريات المتبقية
+            Object.values(purchaseMap).forEach(purchases => {
+                purchases.forEach(p => {
+                    if (p.remainingQty > 0) {
+                        bookInventory.push({
+                            'م': recordNumber++,
+                            'رمز المادة': p['رمز المادة'],
+                            'اسم المادة': p['اسم المادة'],
+                            'الوحدة': p['الوحدة'] || '',
+                            'الكمية': p.remainingQty,
+                            'الافرادي': p['الافرادي'],
+                            'تاريخ الصلاحية': p['تاريخ الصلاحية'],
+                            'تاريخ العملية': p['تاريخ العملية'],
+                            'تاريخ الشراء': p['تاريخ العملية'],
+                            'المورد': p['المورد'] || '',
+                            'نوع العملية': 'مشتريات',
+                            'ملاحظات': p.matched ? 'مبيعات' : 'لايوجد مبيعات',
+                            'رقم السجل': p['رقم السجل'] || ''
+                        });
+                    }
+                });
+            });
+
+            // إضافة المبيعات غير المطابقة
+            allSales.filter(s => !s['مطابق']).forEach(s => {
+                bookInventory.push({
+                    'م': recordNumber++,
+                    'رمز المادة': s['رمز المادة'],
+                    'اسم المادة': s['اسم المادة'],
+                    'الوحدة': s['الوحدة'] || '',
+                    'الكمية': -s['الكمية'],
+                    'الافرادي': s['الافرادي'],
+                    'تاريخ الصلاحية': s['تاريخ الصلاحية'],
+                    'تاريخ العملية': s['تاريخ العملية'],
+                    'تاريخ الشراء': '',
+                    'المورد': '',
+                    'نوع العملية': 'مبيعات',
+                    'ملاحظات': 'لايوجد مشتريات',
+                    'رقم السجل': s['رقم السجل'] || ''
+                });
+            });
+
+            // الترتيب حسب (تاريخ الشراء ↓، م ↑، تاريخ الصلاحية ↑)
+            bookInventory.sort((a, b) => {
+                const dateA = a['تاريخ الشراء'] || '';
+                const dateB = b['تاريخ الشراء'] || '';
+                const dateComparison = new Date(dateB) - new Date(dateA);
+                if (dateComparison !== 0) return dateComparison;
+                const mComparison = a['م'] - b['م'];
+                if (mComparison !== 0) return mComparison;
+                
+                return new Date(a['تاريخ الصلاحية']) - new Date(b['تاريخ الصلاحية']);
+            });
+
+            return bookInventory;
+        }
+
+        function calculateCostOfSales() {
+            const costOfSales = [];
+            
+            // ترتيب المشتريات حسب التاريخ (FIFO)
+            const sortedPurchases = [...processedData.netPurchases]
+                .filter(p => p['القائمة'] === 'A' || p['القائمة'] === 'D')
+                .sort((a, b) => new Date(a['تاريخ العملية']) - new Date(b['تاريخ العملية']));
+
+            // ترتيب المبيعات حسب التاريخ
+            const sortedSales = [...processedData.netSales]
+                .filter(s => s['القائمة'] === 'C' || s['القائمة'] === 'B' || s['القائمة'] === 'F')
+                .sort((a, b) => new Date(a['تاريخ العملية']) - new Date(b['تاريخ العملية']));
+
+            // بناء سجل المشتريات المتاحة
+            const purchaseHistory = {};
+            sortedPurchases.forEach(p => {
+                const key = p['رمز المادة'];
+                if (!purchaseHistory[key]) {
+                    purchaseHistory[key] = [];
+                }
+                purchaseHistory[key].push({
+                    ...p,
+                    remainingQty: p['الكمية'],
+                    cost: p['الافرادي']
+                });
+            });
+
+            let recordNumber = 1;
+            
+            // حساب تكلفة كل مبيعة
+            sortedSales.forEach(sale => {
+                const key = sale['رمز المادة'];
+                const history = purchaseHistory[key] || [];
+                let totalCost = 0;
+                let remainingQtyToMatch = sale['الكمية'];
+
+                // مطابقة المبيعة مع المشتريات (FIFO)
+                for (let i = 0; i < history.length && remainingQtyToMatch > 0; i++) {
+                    const purchase = history[i];
+                    if (purchase.remainingQty <= 0) continue;
+
+                    const qtyToUse = Math.min(remainingQtyToMatch, purchase.remainingQty);
+                    totalCost += qtyToUse * purchase.cost;
+                    remainingQtyToMatch -= qtyToUse;
+                    purchase.remainingQty -= qtyToUse;
+                }
+
+                const avgCost = sale['الكمية'] > 0 ? totalCost / sale['الكمية'] : 0;
+                const profit = (sale['الافرادي'] - avgCost) * sale['الكمية'];
+                const profitMargin = sale['الافرادي'] > 0 ? ((sale['الافرادي'] - avgCost) / sale['الافرادي']) * 100 : 0;
+                const profitType = profit >= 0 ? 'ربح' : 'خسارة';
+
+                costOfSales.push({
+                    'م': recordNumber++,
+                    'رمز المادة': sale['رمز المادة'],
+                    'اسم المادة': sale['اسم المادة'],
+                    'الوحدة': sale['الوحدة'] || '',
+                    'الكمية': sale['الكمية'],
+                    'الافرادي': sale['الافرادي'],
+                    'تاريخ الصلاحية': sale['تاريخ الصلاحية'],
+                    'تاريخ العملية': sale['تاريخ العملية'],
+                    'ملاحظات': sale['ملاحظات'],
+                    'افرادي الشراء': Math.round(avgCost),
+                    'تاريخ الشراء': sale['تاريخ العملية'],
+                    'المورد': sale['المورد'] || '',
+                    'افرادي الربح': sale['الافرادي'] - Math.round(avgCost),
+                    'نسبة الربح': Math.round(profitMargin),
+                    'اجمالي الربح': Math.round(profit),
+                    'عمر العملية': calculateDaysSince(sale['تاريخ العملية']),
+                    'رقم السجل': sale['رقم السجل'] || '',
+                    'بيان الربحية': profitType
+                });
+            });
+
+            return costOfSales;
+        }
+
+        function calculateSupplierPayables() {
+            const supplierMap = {};
+
+            // حساب الأرصدة من جدول supplierbalances
+            globalData.balances.forEach(balance => {
+                const supplier = balance['المورد'] || 'غير محدد';
+                if (!supplierMap[supplier]) {
+                    supplierMap[supplier] = {
+                        'م': balance['م'] || '',
+                        'رمز الحساب': balance['رمز الحساب'] || '',
+                        'اسم المورد': supplier,
+                        'مدين': balance['مدين'] || 0,
+                        'دائن': balance['دائن'] || 0,
+                        'الحساب المساعد': balance['الحساب المساعد'] || '',
+                        'الرصيد': 0,
+                        'قيمة المخزون': 0,
+                        'الاستحقاق': 0,
+                        'المبلغ المستحق': 0,
+                        'راكد تماما': 0,
+                        'مخزون زائد': 0,
+                        'الاحتياج': 0,
+                        'أصناف جديدة': 0,
+                        'منتهي': 0,
+                        'قريب جدا': 0,
+                        'معد للارجاع': 0
+                    };
+                }
+                supplierMap[supplier]['مدين'] = balance['مدين'] || 0;
+                supplierMap[supplier]['دائن'] = balance['دائن'] || 0;
+                supplierMap[supplier]['رمز الحساب'] = balance['رمز الحساب'] || '';
+                supplierMap[supplier]['الحساب المساعد'] = balance['الحساب المساعد'] || '';
+            });
+
+            // حساب الرصيد (المدين - الدائن)
+            Object.values(supplierMap).forEach(supplier => {
+                supplier['الرصيد'] = supplier['مدين'] - supplier['دائن'];
+            });
+
+            // حساب قيمة المخزون من المخزون النهائي
+            processedData.endingInventory.forEach(item => {
+                const supplierName = item['المورد'] || 'غير محدد';
+                if (supplierMap[supplierName]) {
+                    supplierMap[supplierName]['قيمة المخزون'] += item['الاجمالي'] || 0;
+                } else {
+                    supplierMap[supplierName] = {
+                        'اسم المورد': supplierName,
+                        'مدين': 0,
+                        'دائن': 0,
+                        'الرصيد': 0,
+                        'قيمة المخزون': item['الاجمالي'] || 0,
+                        'الاستحقاق': 0,
+                        'المبلغ المستحق': 0,
+                        'راكد تماما': 0,
+                        'مخزون زائد': 0,
+                        'الاحتياج': 0,
+                        'أصناف جديدة': 0,
+                        'منتهي': 0,
+                        'قريب جدا': 0,
+                        'معد للارجاع': 0
+                    };
+                }
+            });
+
+            // حساب الاستحقاق وتحليل المخزون
+            Object.values(supplierMap).forEach(supplier => {
+                supplier['الاستحقاق'] = supplier['قيمة المخزون'] + supplier['الرصيد'];
+                
+                // حساب المبلغ المستحق
+                if (supplier['الاستحقاق'] > 0) {
+                    supplier['المبلغ المستحق'] = supplier['الاستحقاق'];
+                } else {
+                    supplier['المبلغ المستحق'] = 0;
+                }
+
+                // تحليل المخزون لهذا المورد
+                const supplierInventory = processedData.endingInventory.filter(item => 
+                    item['المورد'] === supplier['اسم المورد']
+                );
+
+                supplierInventory.forEach(item => {
+                    const expiryStatus = item['بيان الصلاحية'] || '';
+                    const movementStatus = item['بيان الحركة'] || '';
+                    const itemAge = item['عمر الصنف'] || 0;
+                    const totalValue = item['الاجمالي'] || 0;
+
+                    // تحديث المؤشرات
+                    if (movementStatus === 'راكد تماما') {
+                        supplier['راكد تماما'] += totalValue;
+                    }
+                    
+                    if (movementStatus === 'مخزون زائد') {
+                        supplier['مخزون زائد'] += totalValue;
+                    }
+                    
+                    if (movementStatus === 'احتياج') {
+                        supplier['الاحتياج'] += totalValue;
+                    }
+                    
+                    if (itemAge < 90) {
+                        supplier['أصناف جديدة'] += totalValue;
+                    }
+                    
+                    if (expiryStatus === 'منتهي') {
+                        supplier['منتهي'] += totalValue;
+                    }
+                    
+                    if (expiryStatus === 'قريب جدا') {
+                        supplier['قريب جدا'] += totalValue;
+                    }
+                });
+
+                // حساب المعد للارجاع
+                supplier['معد للارجاع'] = supplier['راكد تماما'] + supplier['مخزون زائد'] + 
+                                         supplier['منتهي'] + supplier['قريب جدا'];
+            });
+
+            return Object.values(supplierMap);
+        }
+
+        // ============================================================
+        // وظائف عرض البيانات
+        // ============================================================
+
+        function generateReports() {
+            // سيتم ملء الجداول لاحقاً
+        }
+
+        function populateTables() {
+            // ملء جدول صافي المشتريات
+            populateTable('netPurchasesTable', processedData.netPurchases.map(p => ({
+                'م': p['م'] || '',
+                'رمز المادة': p['رمز المادة'] || '',
+                'اسم المادة': p['اسم المادة'] || '',
+                'الوحدة': p['الوحدة'] || '',
+                'الكمية': formatNumber(p['الكمية']),
+                'الافرادي': formatNumber(p['الافرادي']),
+                'تاريخ الصلاحية': p['تاريخ الصلاحية'] || '',
+                'المورد': p['المورد'] || '',
+                'تاريخ العملية': p['تاريخ العملية'] || '',
+                'نوع العملية': p['نوع العملية'] || '',
+                'ملاحظات': p['ملاحظات'] || '',
+                'القائمة': p['القائمة'] || '',
+                'كمية الجرد': formatNumber(p['كمية الجرد'] || 0),
+                'كمية المبيعات': formatNumber(p['كمية المبيعات'] || 0),
+                'رقم السجل': p['رقم السجل'] || ''
+            })));
+
+            // ملء جدول صافي المبيعات
+            populateTable('netSalesTable', processedData.netSales.map(s => ({
+                'م': s['م'] || '',
+                'رمز المادة': s['رمز المادة'] || '',
+                'اسم المادة': s['اسم المادة'] || '',
+                'الوحدة': s['الوحدة'] || '',
+                'الكمية': formatNumber(s['الكمية']),
+                'الافرادي': formatNumber(s['الافرادي']),
+                'تاريخ الصلاحية': s['تاريخ الصلاحية'] || '',
+                'تاريخ العملية': s['تاريخ العملية'] || '',
+                'نوع العملية': s['نوع العملية'] || '',
+                'ملاحظات': s['ملاحظات'] || '',
+                'القائمة': s['القائمة'] || '',
+                'رقم السجل': s['رقم السجل'] || ''
+            })));
+
+            // ملء جدول المخزون الفعلي
+            populateTable('inventoryTable', globalData.inventory.map(i => ({
+                'م': i['م'] || '',
+                'رمز المادة': i['رمز المادة'] || '',
+                'اسم المادة': i['اسم المادة'] || '',
+                'الوحدة': i['الوحدة'] || '-',
+                'الكمية': formatNumber(i['الكمية']),
+                'تاريخ الصلاحية': i['تاريخ الصلاحية'] || '-',
+                'ملاحظات': i['ملاحظات'] || '',
+                'القائمة': i['القائمة'] || '',
+                'رقم السجل': i['رقم السجل'] || ''
+            })));
+
+            // ملء جدول المخزون النهائي
+            populateTable('endingInventoryTable', processedData.endingInventory.map(e => ({
+                'م': e['م'] || '',
+                'رمز المادة': e['رمز المادة'] || '',
+                'اسم المادة': e['اسم المادة'] || '',
+                'الوحدة': e['الوحدة'] || '',
+                'الكمية': formatNumber(e['الكمية']),
+                'تاريخ الصلاحية': e['تاريخ الصلاحية'] || '',
+                'القائمة': e['القائمة'] || '',
+                'رقم السجل': e['رقم السجل'] || '',
+                'الافرادي': formatNumber(e['الافرادي'] || 0),
+                'تاريخ الشراء': e['تاريخ الشراء'] || '',
+                'المورد': e['المورد'] || '',
+                'الاجمالي': formatNumber(e['الاجمالي'] || 0),
+                'نوع العملية': e['نوع العملية'] || '',
+                'ملاحظات': e['ملاحظات'] || '',
+                'عمر الصنف': e['عمر الصنف'] || '',
+                'بيان الصلاحية': e['بيان الصلاحية'] || '',
+                'بيان الحركة': e['بيان الحركة'] || '',
+                'الحالة': e['الحالة'] || ''
+            })));
+
+            // ملء جدول الجرد الدفتري
+            populateTable('bookInventoryTable', processedData.bookInventory.map(b => ({
+                'م': b['م'] || '',
+                'رمز المادة': b['رمز المادة'] || '',
+                'اسم المادة': b['اسم المادة'] || '',
+                'الوحدة': b['الوحدة'] || '',
+                'الكمية': formatNumber(b['الكمية'] || 0),
+                'الافرادي': formatNumber(b['الافرادي'] || 0),
+                'تاريخ الصلاحية': b['تاريخ الصلاحية'] || '',
+                'تاريخ العملية': b['تاريخ العملية'] || '',
+                'المورد': b['المورد'] || '',
+                'نوع العملية': b['نوع العملية'] || '',
+                'ملاحظات': b['ملاحظات'] || '',
+                'رقم السجل': b['رقم السجل'] || ''
+            })));
+
+            // ملء جدول تكلفة المبيعات
+            populateTable('costOfSalesTable', processedData.costOfSales.map(c => ({
+                'م': c['م'] || '',
+                'رمز المادة': c['رمز المادة'] || '',
+                'اسم المادة': c['اسم المادة'] || '',
+                'الوحدة': c['الوحدة'] || '',
+                'الكمية': formatNumber(c['الكمية'] || 0),
+                'الافرادي': formatNumber(c['الافرادي'] || 0),
+                'تاريخ الصلاحية': c['تاريخ الصلاحية'] || '',
+                'تاريخ العملية': c['تاريخ العملية'] || '',
+                'ملاحظات': c['ملاحظات'] || '',
+                'افرادي الشراء': formatNumber(c['افرادي الشراء'] || 0),
+                'تاريخ الشراء': c['تاريخ الشراء'] || '',
+                'المورد': c['المورد'] || '',
+                'افرادي الربح': formatNumber(c['افرادي الربح'] || 0),
+                'نسبة الربح': (c['نسبة الربح'] || 0) + '%',
+                'اجمالي الربح': formatNumber(c['اجمالي الربح'] || 0),
+                'عمر العملية': c['عمر العملية'] || '',
+                'رقم السجل': c['رقم السجل'] || '',
+                'بيان الربحية': c['بيان الربحية'] || ''
+            })));
+
+            // ملء جدول استحقاق الموردين
+            populateTable('supplierPayablesTable', processedData.supplierPayables.map(s => ({
+                'م': s['م'] || '',
+                'رمز الحساب': s['رمز الحساب'] || '',
+                'اسم المورد': s['اسم المورد'] || '',
+                'مدين': formatNumber(s['مدين']),
+                'دائن': formatNumber(s['دائن']),
+                'الحساب المساعد': s['الحساب المساعد'] || '',
+                'الرصيد': formatNumber(s['الرصيد']),
+                'قيمة المخزون': formatNumber(s['قيمة المخزون']),
+                'الاستحقاق': formatNumber(s['الاستحقاق']),
+                'المبلغ المستحق': formatNumber(s['المبلغ المستحق']),
+                'راكد تماما': formatNumber(s['راكد تماما']),
+                'مخزون زائد': formatNumber(s['مخزون زائد']),
+                'الاحتياج': formatNumber(s['الاحتياج']),
+                'أصناف جديدة': formatNumber(s['أصناف جديدة']),
+                'منتهي': formatNumber(s['منتهي']),
+                'قريب جدا': formatNumber(s['قريب جدا']),
+                'معد للارجاع': formatNumber(s['معد للارجاع'])
+            })));
+
+            // ملء قائمة الموردين
+            populateSupplierSelect();
+        }
+
+        function populateTable(tableId, data) {
+            const tbody = document.querySelector(`#${tableId} tbody`);
+            const table = document.querySelector(`#${tableId}`);
+            
+            // إزالة عناصر التحكم الموجودة
+            const existingControls = document.querySelector(`#${tableId}-pagination`);
+            if (existingControls) {
+                existingControls.remove();
+            }
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '';
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td colspan="100" class="text-center text-gray-500">لا توجد بيانات</td>`;
+                tbody.appendChild(tr);
+                return;
+            }
+
+            // لجداول صغيرة، استخدام الطريقة العادية
+            if (data.length <= 2000) {
+                tbody.innerHTML = '';
+                data.forEach(row => {
+                    const tr = document.createElement('tr');
+                    Object.values(row).forEach(value => {
+                        const td = document.createElement('td');
+                        td.textContent = value !== undefined && value !== null ? value : '';
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+                });
+                return;
+            }
+
+            // لجداول كبيرة، استخدام التمرير الافتراضي
+            setupVirtualScrolling(table, tbody, data);
+        }
+
+        function setupVirtualScrolling(table, tbody, data) {
+            const rowHeight = 40; // ارتفاع تقريبي لكل صف
+            const visibleRows = 20; // عدد الصفوف المرئية
+            const bufferRows = 10; // عدد الصفوف المخزنة كمخزن مؤقت
+            const totalRows = data.length;
+            
+            // تعيين ارتفاع ثابت للجدول
+            tbody.style.height = `${visibleRows * rowHeight}px`;
+            tbody.style.overflowY = 'auto';
+            tbody.style.display = 'block';
+            tbody.style.position = 'relative';
+            
+            let startIndex = 0;
+            
+            function renderVisibleRows() {
+                const scrollTop = tbody.scrollTop;
+                const newStartIndex = Math.max(0, Math.floor(scrollTop / rowHeight) - bufferRows);
+                const endIndex = Math.min(totalRows, newStartIndex + visibleRows + bufferRows * 2);
+                
+                if (newStartIndex !== startIndex) {
+                    startIndex = newStartIndex;
+                    tbody.innerHTML = '';
+                    
+                    // إضافة مساحة فارغة في الأعلى
+                    if (startIndex > 0) {
+                        const topSpacer = document.createElement('div');
+                        topSpacer.style.height = `${startIndex * rowHeight}px`;
+                        tbody.appendChild(topSpacer);
+                    }
+                    
+                    // عرض الصفوف المرئية
+                    for (let i = startIndex; i < endIndex; i++) {
+                        const row = data[i];
+                        const tr = document.createElement('tr');
+                        tr.style.height = `${rowHeight}px`;
+                        tr.style.display = 'table-row';
+                        
+                        Object.values(row).forEach(value => {
+                            const td = document.createElement('td');
+                            td.textContent = value !== undefined && value !== null ? value : '';
+                            tr.appendChild(td);
+                        });
+                        
+                        tbody.appendChild(tr);
+                    }
+                    
+                    // إضافة مساحة فارغة في الأسفل
+                    const remainingRows = totalRows - endIndex;
+                    if (remainingRows > 0) {
+                        const bottomSpacer = document.createElement('div');
+                        bottomSpacer.style.height = `${remainingRows * rowHeight}px`;
+                        tbody.appendChild(bottomSpacer);
+                    }
+                }
+            }
+            
+            // إضافة مستمع لحدث التمرير
+            tbody.addEventListener('scroll', renderVisibleRows);
+            
+            // عرض الصفوف الأولية
+            renderVisibleRows();
+        }
+
+        function populateSupplierSelect() {
+            const select = document.getElementById('supplierSelect');
+            select.innerHTML = '<option value="">-- اختر مورد --</option>';
+            
+            const suppliers = [...new Set(processedData.endingInventory.map(item => item['المورد']).filter(s => s))];
+            suppliers.sort().forEach(supplier => {
+                const option = document.createElement('option');
+                option.value = supplier;
+                option.textContent = supplier;
+                select.appendChild(option);
+            });
+        }
+
+        function updateSupplierMovement() {
+            const supplier = document.getElementById('supplierSelect').value;
+            if (!supplier) {
+                document.querySelector('#supplierTotalsTable tbody').innerHTML = '';
+                document.querySelector('#supplierInventoryTable tbody').innerHTML = '';
+                document.querySelector('#supplierReturnItemsTable tbody').innerHTML = '';
+                return;
+            }
+
+            // Part 1: Supplier Totals
+            const supplierData = processedData.supplierPayables.find(s => s['اسم المورد'] === supplier);
+            if (supplierData) {
+                populateTable('supplierTotalsTable', [{
+                    'رصيد المورد': formatNumber(supplierData['الرصيد']),
+                    'قيمة المخزون': formatNumber(supplierData['قيمة المخزون']),
+                    'الاستحقاق': formatNumber(supplierData['الاستحقاق']),
+                    'المبلغ المستحق': formatNumber(supplierData['المبلغ المستحق']),
+                    'قيمة المخزون الراكد': formatNumber(supplierData['راكد تماما']),
+                    'قيمة المخزون الزائد': formatNumber(supplierData['مخزون زائد']),
+                    'قيمة الاحتياج': formatNumber(supplierData['الاحتياج']),
+                    'قيمة المعد للارجاع': formatNumber(supplierData['معد للارجاع'])
+                }]);
+            }
+
+            // Part 2: Supplier Inventory Details
+            const supplierInventory = processedData.endingInventory.filter(item => 
+                item['المورد'] === supplier
+            ).map((item, idx) => ({
+                'م': idx + 1,
+                'رمز المادة': item['رمز المادة'],
+                'اسم المادة': item['اسم المادة'],
+                'الوحدة': item['الوحدة'],
+                'الكمية': formatNumber(item['الكمية']),
+                'افرادي الشراء': formatNumber(item['الافرادي']),
+                'اجمالي الشراء': formatNumber(item['الاجمالي']),
+                'تاريخ الصلاحية': item['تاريخ الصلاحية'],
+                'عمر الصنف': item['عمر الصنف'],
+                'مبيعات الصنف': formatNumber(calculateSalesLast90Days(item['رمز المادة'], processedData.netSales)),
+                'بيان الصلاحية': item['بيان الصلاحية'],
+                'بيان الحركة': item['بيان الحركة'],
+                'البيان': item['الحالة']
+            }));
+
+            populateTable('supplierInventoryTable', supplierInventory);
+
+            // Part 3: Supplier Return Items
+            const returnItems = supplierInventory.filter(item => 
+                item['بيان الحركة'] === 'راكد تماما' || 
+                item['بيان الحركة'] === 'مخزون زائد' ||
+                item['بيان الصلاحية'] === 'منتهي' ||
+                item['بيان الصلاحية'] === 'قريب جدا'
+            );
+
+            populateTable('supplierReturnItemsTable', returnItems);
+        }
+
+        // ============================================================
+        // وظائف التنقل والبحث
+        // ============================================================
+
+        function switchTab(tabName) {
+            // إخفاء جميع التبويبات
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+
+            // إظهار التبويب المختار
+            document.getElementById(tabName).classList.remove('hidden');
+
+            // تحديث أزرار التبويب
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        // وظيفة مساعدة للحصول على رسالة خطأ واضحة
+        function getErrorMessage(error) {
+            if (!error) {
+                return 'حدث خطأ غير معروف';
+            }
+            
+            // التعامل مع الأخطاء العادية
+            if (error instanceof Error) {
+                return error.message || error.toString();
+            }
+            
+            // التعامل مع الكائنات
+            if (typeof error === 'object') {
+                if (error.message) {
+                    return error.message;
+                } else {
+                    const errorString = JSON.stringify(error);
+                    // التعامل مع "[object Event]" وحالات مشابهة
+                    if (errorString === '{}' || errorString.includes('[object')) {
+                        return 'حدث خطأ غير معروف في النظام';
+                    }
+                    return errorString;
+                }
+            }
+            
+            // التعامل مع القيم الأخرى
+            const errorMessage = String(error);
+            if (errorMessage.includes('[object')) {
+                return 'حدث خطأ في النظام';
+            }
+            
+            return errorMessage || 'حدث خطأ غير معروف';
+        }
+
+        // تحسين أداء البحث للبيانات الكبيرة
+        let searchTimeout;
+        document.getElementById('searchInput').addEventListener('keyup', (e) => {
+            // استخدام debounce لتقليل عدد عمليات البحث
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                const searchTerm = e.target.value.toLowerCase();
+                if (searchTerm.length < 2 && searchTerm.length > 0) return; // عدم البحث إلا بعد إدخال حرفين
+                
+                const tables = document.querySelectorAll('table tbody');
+                
+                tables.forEach(tbody => {
+                    // تحسين أداء البحث في الجداول الكبيرة
+                    let visibleCount = 0;
+                    const rows = tbody.querySelectorAll('tr');
+                    
+                    // معالجة الصفوف في دفعات لتجنب حظر واجهة المستخدم
+                    const batchSize = 1000;
+                    let currentIndex = 0;
+                    
+                    function processBatch() {
+                        const endIndex = Math.min(currentIndex + batchSize, rows.length);
+                        for (let i = currentIndex; i < endIndex; i++) {
+                            const row = rows[i];
+                            const text = row.textContent.toLowerCase();
+                            const isVisible = searchTerm === '' || text.includes(searchTerm);
+                            row.style.display = isVisible ? '' : 'none';
+                            if (isVisible) visibleCount++;
+                        }
+                        
+                        currentIndex = endIndex;
+                        
+                        // تحديث عداد النتائ results
+                        if (currentIndex < rows.length) {
+                            setTimeout(processBatch, 0); // السماح بتحديث واجهة المستخدم
+                        } else {
+                            // عرض رسالة إذا لم يتم العثور على نتائج
+                            const noResultsRow = tbody.querySelector('.no-results-row');
+                            if (noResultsRow) noResultsRow.remove();
+                            
+                            if (visibleCount === 0 && searchTerm !== '') {
+                                const tr = document.createElement('tr');
+                                tr.className = 'no-results-row';
+                                tr.innerHTML = `<td colspan="100" class="text-center text-gray-500 py-4">لا توجد نتائج للبحث "${e.target.value}"</td>`;
+                                tbody.appendChild(tr);
+                            }
+                        }
+                    }
+                    
+                    processBatch();
+                });
+            }, 300); // تأخير 300 مللي ثانية بعد توقف الكتابة
+        });
+
+        // ============================================================
+        // وظائف التصدير والطباعة
+        // ============================================================
+
+        function exportAllReports() {
+            const wb = XLSX.utils.book_new();
+
+            // إضافة جميع التقارير
+            XLSX.utils.book_append_sheet(wb, convertTableToSheet('netPurchasesTable'), 'صافي المشتريات');
+            XLSX.utils.book_append_sheet(wb, convertTableToSheet('netSalesTable'), 'صافي المبيعات');
+            XLSX.utils.book_append_sheet(wb, convertTableToSheet('inventoryTable'), 'المخزون الفعلي');
+            XLSX.utils.book_append_sheet(wb, convertTableToSheet('endingInventoryTable'), 'المخزون النهائي');
+            XLSX.utils.book_append_sheet(wb, convertTableToSheet('bookInventoryTable'), 'الجرد الدفتري');
+            XLSX.utils.book_append_sheet(wb, convertTableToSheet('costOfSalesTable'), 'تكلفة المبيعات');
+            XLSX.utils.book_append_sheet(wb, convertTableToSheet('supplierPayablesTable'), 'استحقاق الموردين');
+
+            XLSX.writeFile(wb, 'تقارير_المحاسبة.xlsx');
+        }
+
+        function exportSupplierReport() {
+            const supplier = document.getElementById('supplierSelect').value;
+            if (!supplier) {
+                showAlert('يرجى اختيار مورد أولاً', 'warning');
+                return;
+            }
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, convertTableToSheet('supplierTotalsTable'), `إجمالي_${supplier}`);
+            XLSX.utils.book_append_sheet(wb, convertTableToSheet('supplierInventoryTable'), `مخزون_${supplier}`);
+            XLSX.utils.book_append_sheet(wb, convertTableToSheet('supplierReturnItemsTable'), `معد_للارجاع_${supplier}`);
+            XLSX.writeFile(wb, `تقرير_المورد_${supplier}.xlsx`);
+        }
+
+        function convertTableToSheet(tableId) {
+            const table = document.getElementById(tableId);
+            
+            // Check if this is a virtually scrolled table
+            const tbody = table.querySelector('tbody');
+            if (tbody && (tbody.style.overflowY === 'auto' || tbody.style.overflowY === 'scroll')) {
+                // For virtually scrolled tables, create sheet from data directly
+                return createSheetFromData(tableId);
+            }
+            
+            // For regular tables, use the standard method
+            return XLSX.utils.table_to_sheet(table);
+        }
+        
+        function createSheetFromData(tableId) {
+            // Get headers
+            let headers = [];
+            const headerRow = document.querySelector(`#${tableId} thead tr`);
+            if (headerRow) {
+                headers = Array.from(headerRow.querySelectorAll('th')).map(th => th.textContent);
+            }
+            
+            // Get data based on table ID
+            let data = [];
+            
+            // Special handling for tables to get correct headers
+            switch(tableId) {
+                case 'netPurchasesTable':
+                    headers = ['م', 'رمز المادة', 'اسم المادة', 'الوحدة', 'الكمية', 'الافرادي', 'تاريخ الصلاحية', 'المورد', 'تاريخ العملية', 'نوع العملية', 'ملاحظات', 'القائمة', 'كمية الجرد', 'كمية المبيعات', 'رقم السجل'];
+                    break;
+                case 'netSalesTable':
+                    headers = ['م', 'رمز المادة', 'اسم المادة', 'الوحدة', 'الكمية', 'الافرادي', 'تاريخ الصلاحية', 'تاريخ العملية', 'نوع العملية', 'ملاحظات', 'القائمة', 'رقم السجل'];
+                    break;
+                case 'inventoryTable':
+                    headers = ['م', 'رمز المادة', 'اسم المادة', 'الوحدة', 'الكمية', 'تاريخ الصلاحية', 'ملاحظات', 'القائمة', 'رقم السجل'];
+                    break;
+                case 'endingInventoryTable':
+                    headers = ['م', 'رمز المادة', 'اسم المادة', 'الوحدة', 'الكمية', 'تاريخ الصلاحية', 'القائمة', 'رقم السجل', 'الافرادي', 'تاريخ الشراء', 'المورد', 'الاجمالي', 'نوع العملية', 'ملاحظات', 'عمر الصنف', 'بيان الصلاحية', 'بيان الحركة', 'الحالة'];
+                    break;
+                case 'bookInventoryTable':
+                    headers = ['م', 'رمز المادة', 'اسم المادة', 'الوحدة', 'الكمية', 'الافرادي', 'تاريخ الصلاحية', 'تاريخ العملية', 'المورد', 'نوع العملية', 'ملاحظات', 'رقم السجل'];
+                    break;
+                case 'costOfSalesTable':
+                    headers = ['م', 'رمز المادة', 'اسم المادة', 'الوحدة', 'الكمية', 'الافرادي', 'تاريخ الصلاحية', 'تاريخ العملية', 'ملاحظات', 'افرادي الشراء', 'تاريخ الشراء', 'المورد', 'افرادي الربح', 'نسبة الربح', 'اجمالي الربح', 'عمر العملية', 'رقم السجل', 'بيان الربحية'];
+                    break;
+                case 'supplierPayablesTable':
+                    headers = ['م', 'رمز الحساب', 'اسم المورد', 'مدين', 'دائن', 'الحساب المساعد', 'الرصيد', 'قيمة المخزون', 'الاستحقاق', 'المبلغ المستحق', 'راكد تماما', 'مخزون زائد', 'الاحتياج', 'أصناف جديدة', 'منتهي', 'قريب جدا', 'معد للارجاع'];
+                    break;
+                case 'supplierTotalsTable':
+                    headers = ['رصيد المورد', 'قيمة المخزون', 'الاستحقاق', 'المبلغ المستحق', 'قيمة المخزون الراكد', 'قيمة المخزون الزائد', 'قيمة الاحتياج', 'قيمة المعد للارجاع'];
+                    break;
+                case 'supplierInventoryTable':
+                    headers = ['م', 'رمز المادة', 'اسم المادة', 'الوحدة', 'الكمية', 'افرادي الشراء', 'اجمالي الشراء', 'تاريخ الصلاحية', 'عمر الصنف', 'مبيعات الصنف', 'بيان الصلاحية', 'بيان الحركة', 'البيان'];
+                    break;
+                case 'supplierReturnItemsTable':
+                    headers = ['م', 'رمز المادة', 'اسم المادة', 'الوحدة', 'الكمية', 'افرادي الشراء', 'اجمالي الشراء', 'تاريخ الصلاحية', 'عمر الصنف', 'مبيعات الصنف', 'بيان الصلاحية', 'بيان الحركة', 'البيان'];
+                    break;
+            }
+            
+            switch(tableId) {
+                case 'netPurchasesTable':
+                    data = processedData.netPurchases.map(p => [
+                        p['م'] || '',
+                        p['رمز المادة'] || '',
+                        p['اسم المادة'] || '',
+                        p['الوحدة'] || '',
+                        formatNumber(p['الكمية']),
+                        formatNumber(p['الافرادي']),
+                        p['تاريخ الصلاحية'] || '',
+                        p['المورد'] || '',
+                        p['تاريخ العملية'] || '',
+                        p['نوع العملية'] || '',
+                        p['ملاحظات'] || '',
+                        p['القائمة'] || '',
+                        p['كمية الجرد'] || 0,
+                        p['كمية المبيعات'] || 0,
+                        p['رقم السجل'] || ''
+                    ]);
+                    break;
+                case 'netSalesTable':
+                    data = processedData.netSales.map(s => [
+                        s['م'] || '',
+                        s['رمز المادة'] || '',
+                        s['اسم المادة'] || '',
+                        s['الوحدة'] || '',
+                        formatNumber(s['الكمية']),
+                        formatNumber(s['الافرادي']),
+                        s['تاريخ الصلاحية'] || '',
+                        s['تاريخ العملية'] || '',
+                        s['نوع العملية'] || '',
+                        s['ملاحظات'] || '',
+                        s['القائمة'] || '',
+                        s['رقم السجل'] || ''
+                    ]);
+                    break;
+                case 'inventoryTable':
+                    data = globalData.inventory.map(i => [
+                        i['م'] || '',
+                        i['رمز المادة'] || '',
+                        i['اسم المادة'] || '',
+                        i['الوحدة'] || '',
+                        formatNumber(i['الكمية']),
+                        i['تاريخ الصلاحية'] || '',
+                        i['ملاحظات'] || '',
+                        i['القائمة'] || '',
+                        i['رقم السجل'] || ''
+                    ]);
+                    break;
+                case 'endingInventoryTable':
+                    data = processedData.endingInventory.map(e => [
+                        e['م'] || '',
+                        e['رمز المادة'] || '',
+                        e['اسم المادة'] || '',
+                        e['الوحدة'] || '',
+                        formatNumber(e['الكمية']),
+                        e['تاريخ الصلاحية'] || '',
+                        e['القائمة'] || '',
+                        e['رقم السجل'] || '',
+                        formatNumber(e['الافرادي'] || 0),
+                        e['تاريخ الشراء'] || '',
+                        e['المورد'] || '',
+                        formatNumber(e['الاجمالي'] || 0),
+                        e['نوع العملية'] || '',
+                        e['ملاحظات'] || '',
+                        e['عمر الصنف'] || '',
+                        e['بيان الصلاحية'] || '',
+                        e['بيان الحركة'] || '',
+                        e['الحالة'] || ''
+                    ]);
+                    break;
+                case 'bookInventoryTable':
+                    data = processedData.bookInventory.map(b => [
+                        b['م'] || '',
+                        b['رمز المادة'] || '',
+                        b['اسم المادة'] || '',
+                        b['الوحدة'] || '',
+                        formatNumber(b['الكمية'] || 0),
+                        formatNumber(b['الافرادي'] || 0),
+                        b['تاريخ الصلاحية'] || '',
+                        b['تاريخ العملية'] || '',
+                        b['المورد'] || '',
+                        b['نوع العملية'] || '',
+                        b['ملاحظات'] || '',
+                        b['رقم السجل'] || ''
+                    ]);
+                    break;
+                case 'costOfSalesTable':
+                    data = processedData.costOfSales.map(c => [
+                        c['م'] || '',
+                        c['رمز المادة'] || '',
+                        c['اسم المادة'] || '',
+                        c['الوحدة'] || '',
+                        formatNumber(c['الكمية'] || 0),
+                        formatNumber(c['الافرادي'] || 0),
+                        c['تاريخ الصلاحية'] || '',
+                        c['تاريخ العملية'] || '',
+                        c['ملاحظات'] || '',
+                        formatNumber(c['افرادي الشراء'] || 0),
+                        c['تاريخ الشراء'] || '',
+                        c['المورد'] || '',
+                        formatNumber(c['افرادي الربح'] || 0),
+                        (c['نسبة الربح'] || 0) + '%',
+                        formatNumber(c['اجمالي الربح'] || 0),
+                        c['عمر العملية'] || '',
+                        c['رقم السجل'] || '',
+                        c['بيان الربحية'] || ''
+                    ]);
+                    break;
+                case 'supplierPayablesTable':
+                    data = processedData.supplierPayables.map(s => [
+                        s['م'] || '',
+                        s['رمز الحساب'] || '',
+                        s['اسم المورد'] || '',
+                        formatNumber(s['مدين']),
+                        formatNumber(s['دائن']),
+                        s['الحساب المساعد'] || '',
+                        formatNumber(s['الرصيد']),
+                        formatNumber(s['قيمة المخزون']),
+                        formatNumber(s['الاستحقاق']),
+                        formatNumber(s['المبلغ المستحق']),
+                        formatNumber(s['راكد تماما']),
+                        formatNumber(s['مخزون زائد']),
+                        formatNumber(s['الاحتياج']),
+                        formatNumber(s['أصناف جديدة']),
+                        formatNumber(s['منتهي']),
+                        formatNumber(s['قريب جدا']),
+                        formatNumber(s['معد للارجاع'])
+                    ]);
+                    break;
+                case 'supplierTotalsTable':
+                    // Get current supplier from select
+                    const currentSupplier = document.getElementById('supplierSelect').value;
+                    if (currentSupplier) {
+                        const supplierData = processedData.supplierPayables.find(s => s['اسم المورد'] === currentSupplier);
+                        if (supplierData) {
+                            data = [[
+                                formatNumber(supplierData['الرصيد']),
+                                formatNumber(supplierData['قيمة المخزون']),
+                                formatNumber(supplierData['الاستحقاق']),
+                                formatNumber(supplierData['المبلغ المستحق']),
+                                formatNumber(supplierData['راكد تماما']),
+                                formatNumber(supplierData['مخزون زائد']),
+                                formatNumber(supplierData['الاحتياج']),
+                                formatNumber(supplierData['معد للارجاع'])
+                            ]];
+                        }
+                    }
+                    break;
+                case 'supplierInventoryTable':
+                    // Get current supplier from select
+                    const currentSupplier2 = document.getElementById('supplierSelect').value;
+                    if (currentSupplier2) {
+                        data = processedData.endingInventory.filter(item => 
+                            item['المورد'] === currentSupplier2
+                        ).map((item, idx) => [
+                            idx + 1,
+                            item['رمز المادة'],
+                            item['اسم المادة'],
+                            item['الوحدة'],
+                            formatNumber(item['الكمية']),
+                            formatNumber(item['الافرادي']),
+                            formatNumber(item['الاجمالي']),
+                            item['تاريخ الصلاحية'],
+                            item['عمر الصنف'],
+                            formatNumber(calculateSalesLast90Days(item['رمز المادة'], processedData.netSales)),
+                            item['بيان الصلاحية'],
+                            item['بيان الحركة'],
+                            item['الحالة']
+                        ]);
+                    }
+                    break;
+                case 'supplierReturnItemsTable':
+                    // Get current supplier from select
+                    const currentSupplier3 = document.getElementById('supplierSelect').value;
+                    if (currentSupplier3) {
+                        const supplierInventory = processedData.endingInventory.filter(item => 
+                            item['المورد'] === currentSupplier3
+                        );
+                        
+                        data = supplierInventory.filter(item => 
+                            item['بيان الحركة'] === 'راكد تماما' || 
+                            item['بيان الحركة'] === 'مخزون زائد' ||
+                            item['بيان الصلاحية'] === 'منتهي' ||
+                            item['بيان الصلاحية'] === 'قريب جدا'
+                        ).map((item, idx) => [
+                            idx + 1,
+                            item['رمز المادة'],
+                            item['اسم المادة'],
+                            item['الوحدة'],
+                            formatNumber(item['الكمية']),
+                            formatNumber(item['الافرادي']),
+                            formatNumber(item['الاجمالي']),
+                            item['تاريخ الصلاحية'],
+                            item['عمر الصنف'],
+                            formatNumber(calculateSalesLast90Days(item['رمز المادة'], processedData.netSales)),
+                            item['بيان الصلاحية'],
+                            item['بيان الحركة'],
+                            item['الحالة']
+                        ]);
+                    }
+                    break;
+            }
+            
+            // Create sheet with headers and data
+            return XLSX.utils.aoa_to_sheet([headers, ...data]);
+        }
+
+        // ============================================================
+        // وظائف مساعدة
+        // ============================================================
+
+        function formatNumber(num) {
+            if (typeof num !== 'number') num = parseFloat(num) || 0;
+            return num.toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function showAlert(message, type) {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} slide-in`;
+            alert.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span>${message}</span>
+                <span class="alert-close" onclick="this.parentElement.remove()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                </span>
+            `;
+            container.appendChild(alert);
+
+            if (type !== 'error') {
+                setTimeout(() => {
+                    if (alert.parentElement) {
+                        alert.style.opacity = '0';
+                        alert.style.transform = 'translateX(100%)';
+                        setTimeout(() => alert.remove(), 300);
+                    }
+                }, 5000);
+            }
+        }
+
+        function showProgress(show) {
+            document.getElementById('progressContainer').classList.toggle('hidden', !show);
+        }
+
+        function updateProgress(percent, message) {
+            document.getElementById('progressFill').style.width = percent + '%';
+            document.getElementById('progressText').textContent = percent + '%';
+            document.getElementById('statusMessage').textContent = message;
+        }
+
+        function updateMetrics() {
+            const totalPurchases = processedData.netPurchases
+                .filter(p => p['القائمة'] === 'A')
+                .reduce((sum, p) => sum + p['الكمية'], 0);
+            
+            const totalSales = processedData.netSales
+                .filter(s => s['القائمة'] === 'C')
+                .reduce((sum, s) => sum + s['الكمية'], 0);
+            
+            const totalInventory = globalData.inventory
+                .filter(i => i['القائمة'] === 'E')
+                .reduce((sum, i) => sum + i['الكمية'], 0);
+            
+            const suppliersCount = new Set(processedData.endingInventory.map(item => item['المورد']).filter(s => s)).size;
+
+            document.getElementById('totalPurchases').textContent = formatNumber(totalPurchases);
+            document.getElementById('totalSales').textContent = formatNumber(totalSales);
+            document.getElementById('totalInventory').textContent = formatNumber(totalInventory);
+            document.getElementById('suppliersCount').textContent = suppliersCount;
+        }
+
+        // Scroll to top functionality
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+
+        window.addEventListener('scroll', function() {
+            const scrollToTopBtn = document.getElementById('scrollToTop');
+            if (window.pageYOffset > 300) {
+                scrollToTopBtn.classList.add('visible');
+            } else {
+                scrollToTopBtn.classList.remove('visible');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const scrollToTopBtn = document.getElementById('scrollToTop');
+            if (window.pageYOffset > 300) {
+                scrollToTopBtn.classList.add('visible');
+            }
+        });
+
+        // تهيئة Lucide Icons
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    </script>
+</body>
+</html>
